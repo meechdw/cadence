@@ -17,31 +17,21 @@ else
     exit 1
 fi
 
-read -p "Install system-wide? (requires sudo) [y/N]: " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    install_dir="/usr/local/bin"
-    sudo_cmd="sudo"
-else
-    install_dir="$HOME/.local/bin"
-    sudo_cmd=""
-fi
-
+install_dir="$HOME/.local/bin"
 mkdir -p "$install_dir"
 
 download_url="https://github.com/meechdw/cadence/releases/latest/download/$binary_name"
 temp_file="${TMPDIR:-/tmp}/cadence"
 
 curl -L "$download_url" -o "$temp_file"
-$sudo_cmd mv "$temp_file" "$install_dir/cadence"
-$sudo_cmd chmod +x "$install_dir/cadence"
+mv "$temp_file" "$install_dir/cadence"
+chmod +x "$install_dir/cadence"
 
-if [[ "$install_dir" == "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     echo -e "\nWarning: ~/.local/bin is not in your PATH"
-    echo "To complete installation, add the following line to your ~/.bashrc, ~/.zshrc, or equivalent:"
+    echo "To complete installation, add the following line to your shell profile:"
     echo "export PATH='$HOME/.local/bin:$PATH'"
-    echo -e "\nThen restart your terminal or run:"
-    echo "source ~/.bashrc"
+    echo -e "\nThen restart your terminal or re-source your shell profile."
 else
     echo -e "\nInstallation complete!"
 fi

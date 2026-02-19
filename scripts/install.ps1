@@ -20,7 +20,7 @@ if ($Env:PATH -notlike "*$InstallDir*") {
     Write-Host "`nWarning: $InstallDir is not in your PATH"
     Write-Host "To complete installation, run the following command:"
     Write-Host "setx PATH `"$InstallDir;$Env:PATH`""
-    Write-Host "`nThen restart your terminal"
+    Write-Host "`nThen restart your terminal."
 } else {
     Write-Host "`nInstallation complete!"
 }
