@@ -23,4 +23,4 @@ test *filters:
     zig build test --summary all -- {{filters}}
 
 watch +recipes:
-    watchexec -i .zig-cache -i zig-out -- encore {{recipes}}
+    watchexec -i .zig-cache -i zig-out -- just {{recipes}}

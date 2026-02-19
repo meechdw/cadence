@@ -43,7 +43,7 @@
             buildPhase = "zig build -Doptimize=ReleaseSafe --global-cache-dir $(pwd)/.cache";
             installPhase = ''
               mkdir -p $out/bin
-              cp zig-out/bin/encore $out/bin/
+              cp zig-out/bin/cadence $out/bin/
             '';
 
             meta = with pkgs.lib; {
@@ -55,7 +55,7 @@
             };
           };
 
-          encore = self.packages.${system}.default;
+          cadence = self.packages.${system}.default;
         };
 
         devShells.default = pkgs.mkShell {
