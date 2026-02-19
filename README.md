@@ -375,23 +375,6 @@ Complete examples of both [unimodular](./examples/unimodular) and
 [multimodular](./examples/multimodular) project configurations can be found in
 the [examples](./examples) directory.
 
-#### `aliases`
-
-A map from task names to arrays of aliases.
-
-```json
-{
-  "aliases": {
-    "test": ["t", "tst"]
-  },
-  "tasks": {
-    "test": {
-      "cmd": "bun test"
-    }
-  }
-}
-```
-
 #### `dependencies`
 
 An array of relative paths to dependency directories. This property is used in
@@ -491,6 +474,21 @@ Traversal will stop when this property is encountered. See
 ```
 
 ### Task Reference
+
+#### `aliases`
+
+An array of aliases for the task name.
+
+```json
+{
+  "tasks": {
+    "test": {
+      "aliases": ["t", "tst"],
+      "cmd": "bun test"
+    }
+  }
+}
+```
 
 #### `cache`
 
