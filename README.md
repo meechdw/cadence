@@ -669,18 +669,14 @@ cadence [options] [command]
 **Global Options**
 
 - `-c, --cwd <PATH>`: The directory to begin execution from
-- `-h, --help`: Print the help menu
-- `-v, --version`: Print the current version
+- `-h, --help`: Print help menu and exit
+- `-v, --version`: Print version and exit
 
 ### Commands
 
 #### clean
 
 Clean the cache.
-
-**Options**
-
-- `-h, --help`: Print the help menu
 
 ```sh
 cadence clean
@@ -697,22 +693,17 @@ cadence run [options] <task>...
 **Options**
 
 - `-f, --fail`: Exit the process after the first task failure
-- `-h, --help`: Print the help menu
-- `-j, --jobs <INT>`: The maximum number of parallel tasks (default:
+- `-j, --jobs <int>`: The maximum number of parallel tasks (default:
   processors + 1)
 - `-m, --minimal-logs`: Print task logs only, skip titles and summary
 - `-n, --no-cache`: Skip reading and writing the cache
-- `-p, --params <PARAMS>`: Parameters to pass to tasks
+- `-p, --params <params>`: Parameters to pass to tasks
 - `-q, --quiet`: Only print output from failed tasks
 - `-w, --watch`: Rerun tasks when files matching the pattern change
 
 #### tree
 
 Print the dependency tree.
-
-**Options**
-
-- `-h, --help`: Print the help menu
 
 ```sh
 cadence tree <task>...
