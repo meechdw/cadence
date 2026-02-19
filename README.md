@@ -680,6 +680,10 @@ cadence [options] [command]
 
 Clean the cache.
 
+**Options**
+
+- `-h, --help`: Print the help menu
+
 ```sh
 cadence clean
 ```
@@ -707,6 +711,10 @@ cadence run [options] <task>...
 #### tree
 
 Print the dependency tree.
+
+**Options**
+
+- `-h, --help`: Print the help menu
 
 ```sh
 cadence tree <task>...
