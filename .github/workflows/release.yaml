@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate Changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" -t "$GITHUB_REF_NAME" --verify-tag --notes-file CHANGELOG.md
+
+  build:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-linux-gnu
+            binary: cadence
+          - os: ubuntu-latest
+            target: aarch64-linux-gnu
+            binary: cadence
+          - os: macos-latest
+            target: x86_64-macos
+            binary: cadence
+          - os: macos-latest
+            target: aarch64-macos
+            binary: cadence
+          - os: windows-latest
+            target: x86_64-windows
+            binary: cadence.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.1
+      - name: Build
+        shell: bash
+        run: zig build -Doptimize=ReleaseSafe --prefix zig-out/release/${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cadence-${{ matrix.target }}
+          path: zig-out/release/${{ matrix.target }}/bin/${{ matrix.binary }}
+          if-no-files-found: error
+
+  upload-release:
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: cadence-*
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for dir in artifacts/cadence-*; do
+            target=$(basename "$dir")
+            if [[ "$target" == *"windows" ]]; then
+              mv "$dir/cadence.exe" "$dir/$target.exe"
+            else
+              mv "$dir/cadence" "$dir/$target"
+            fi
+            gh release upload "$GITHUB_REF_NAME" "$dir/$target"*
+          done
