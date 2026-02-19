@@ -57,11 +57,8 @@ pub fn main() !void {
     };
 }
 
-// some function that takes a gpa, diag, logger, iter, name, params, parsers, help options,
-// whether it takes args, and a function to call that accepts type MainArgs
-
 fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
-    var iter = process.args();
+    var iter = process.argsWithAllocator(gpa);
     defer iter.deinit();
     const name = iter.next().?;
 
