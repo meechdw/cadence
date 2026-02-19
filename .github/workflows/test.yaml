@@ -1,0 +1,61 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  app-test:
+    if: "!startsWith(github.event.head_commit.message, 'docs:')"
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.1
+      - run: zig build test --summary all
+
+  paths-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      install-sh: ${{ steps.changes.outputs.install-sh }}
+      install-ps1: ${{ steps.changes.outputs.install-ps1 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            install-sh:
+              - "scripts/install.sh"
+            install-ps1:
+              - "scripts/install.ps1"
+
+  install-test-unix:
+    needs: paths-filter
+    if: needs.paths-filter.outputs.install-sh == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "n" | ./scripts/install.sh
+          ~/.local/bin/cadence --version
+
+  install-test-windows:
+    needs: paths-filter
+    if: needs.paths-filter.outputs.install-ps1 == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          ./scripts/install.ps1
+          & "$Env:LOCALAPPDATA\Programs\cadence\cadence.exe" --version
