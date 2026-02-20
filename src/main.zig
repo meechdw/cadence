@@ -115,6 +115,11 @@ fn cleanCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger, iter: *ArgIte
             .description = "Clean the cache",
         });
     }
+
+    fs.cwd().deleteTree(".cadence/cache") catch |err| {
+        return diag.report(err, "failed to clean cache", .{});
+    };
+    try logger.stdout.print("Cache cleaned successfully\n", .{});
 }
 
 fn runCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger, iter: *ArgIterator) !void {
@@ -345,6 +350,7 @@ const std = @import("std");
 const DebugAllocator = std.heap.DebugAllocator;
 const StaticStringMap = std.StaticStringMap;
 const assert = std.debug.assert;
+const fs = std.fs;
 const mem = std.mem;
 const Allocator = mem.Allocator;
 const process = std.process;
