@@ -20,8 +20,6 @@ const main_params =
 
 const main_parsed_params = clap.parseParamsComptime(main_params);
 
-const MainArgs = clap.ResultEx(clap.Help, &main_parsed_params, main_parsers);
-
 pub fn main() !void {
     const is_debug_build = comptime builtin.mode == .Debug;
     var allocator = DebugAllocator(.{}).init;
@@ -58,7 +56,7 @@ pub fn main() !void {
 }
 
 fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
-    var iter = process.argsWithAllocator(gpa);
+    var iter = try process.argsWithAllocator(gpa);
     defer iter.deinit();
     const name = iter.next().?;
 
@@ -73,6 +71,7 @@ fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
     const opts = HelpOptions{
         .name = name,
         .description = "High-performance task orchestration system for any codebase",
+        .arguments = "<command>",
         .subcommands = StaticStringMap([]const u8).initComptime(.{
             .{ "clean", "Clean the cache" },
             .{ "run", "Run tasks" },
