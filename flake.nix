@@ -67,6 +67,7 @@
             nixfmt
             prettier
             prettierd
+            (python3.withPackages (ps: [ ps.mkdocs-material ]))
             taplo
             vscode-json-languageserver
             watchexec

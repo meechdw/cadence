@@ -1,0 +1,49 @@
+site_name: Cadence
+site_url: https://meechdw.github.io/cadence
+site_description: High-performance task orchestration system for any codebase.
+
+theme:
+  name: material
+  logo: images/cadence-logo-white.svg
+  favicon: images/favicon.svg
+  font:
+    text: DM Sans
+    code: Geist Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+  features:
+    - content.code.copy
+    - navigation.sections
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Core Concepts:
+      - core-concepts/index.md
+      - Running Tasks: core-concepts/running-tasks.md
+      - Task Merging: core-concepts/task-merging.md
+      - Dependencies: core-concepts/dependencies.md
+      - Parameters: core-concepts/parameters.md
+      - Workspaces: core-concepts/workspaces.md
+      - Caching: core-concepts/caching.md
+  - Configuration Reference: configuration.md
+  - Task Reference: task-reference.md
+  - Command Line Reference: cli.md

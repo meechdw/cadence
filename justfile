@@ -7,6 +7,9 @@ build mode="Debug":
 clean:
     rm -rf .zig-cache zig-out
 
+docs *args:
+    mkdocs serve {{args}}
+
 generate-deps:
     nix run nixpkgs#zon2nix > deps.nix
     nixfmt deps.nix

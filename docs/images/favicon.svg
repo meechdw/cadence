@@ -1,0 +1,16 @@
+<svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+  .filled { fill: #09090b; }
+  .stroked { stroke: #09090b; }
+  @media (prefers-color-scheme: dark) {
+    .filled { fill: #fafafa; }
+    .stroked { stroke: #fafafa; }
+  }
+</style>
+<path class="filled" d="M26 36C31.5228 36 36 31.5228 36 26C36 20.4772 31.5228 16 26 16C20.4772 16 16 20.4772 16 26C16 31.5228 20.4772 36 26 36Z"/>
+<path class="stroked" opacity="0.3" d="M26 46C37.0457 46 46 37.0457 46 26C46 14.9543 37.0457 6 26 6C14.9543 6 6 14.9543 6 26C6 37.0457 14.9543 46 26 46Z"/>
+<path class="filled" opacity="0.6" d="M26 9C27.6569 9 29 7.65685 29 6C29 4.34315 27.6569 3 26 3C24.3431 3 23 4.34315 23 6C23 7.65685 24.3431 9 26 9Z"/>
+<path class="filled" opacity="0.6" d="M26 49C27.6569 49 29 47.6569 29 46C29 44.3431 27.6569 43 26 43C24.3431 43 23 44.3431 23 46C23 47.6569 24.3431 49 26 49Z"/>
+<path class="filled" opacity="0.6" d="M6 29C7.65685 29 9 27.6569 9 26C9 24.3431 7.65685 23 6 23C4.34315 23 3 24.3431 3 26C3 27.6569 4.34315 29 6 29Z"/>
+<path class="filled" opacity="0.6" d="M46 29C47.6569 29 49 27.6569 49 26C49 24.3431 47.6569 23 46 23C44.3431 23 43 24.3431 43 26C43 27.6569 44.3431 29 46 29Z"/>
+</svg>

@@ -7,5 +7,5 @@ indent_size = 4
 insert_final_newline = true
 end_of_line = lf
 
-[*.{json,md,nix,yaml,yaml}]
+[*.{json,md,nix,yml}]
 indent_size = 2
