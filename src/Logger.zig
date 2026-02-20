@@ -83,8 +83,62 @@ pub const Stream = struct {
     }
 };
 
+test "init(): should not support color when 'NO_COLOR' is set" {
+    var env = try process.getEnvMap(testing.allocator);
+    defer env.deinit();
+
+    env.remove("CLICOLOR");
+    env.remove("CLICOLOR_FORCE");
+    try env.put("NO_COLOR", "1");
+
+    const logger = init(env);
+    try testing.expect(!logger.stdout.is_color_supported);
+    try testing.expect(!logger.stderr.is_color_supported);
+}
+
+test "init(): should support color when 'CLICOLOR_FORCE' is set" {
+    var env = try process.getEnvMap(testing.allocator);
+    defer env.deinit();
+
+    env.remove("NO_COLOR");
+    env.remove("CLICOLOR");
+    try env.put("CLICOLOR_FORCE", "1");
+
+    const logger = init(env);
+    try testing.expect(logger.stdout.is_color_supported);
+    try testing.expect(logger.stderr.is_color_supported);
+}
+
+test "init(): should not support color when 'CLICOLOR' is set to '0'" {
+    var env = try process.getEnvMap(testing.allocator);
+    defer env.deinit();
+
+    env.remove("NO_COLOR");
+    env.remove("CLICOLOR_FORCE");
+    try env.put("CLICOLOR", "0");
+
+    const logger = init(env);
+    try testing.expect(!logger.stdout.is_color_supported);
+    try testing.expect(!logger.stderr.is_color_supported);
+}
+
+test "init(): should support color when 'CLICOLOR' is set to anything other than '0'" {
+    var env = try process.getEnvMap(testing.allocator);
+    defer env.deinit();
+
+    env.remove("NO_COLOR");
+    env.remove("CLICOLOR_FORCE");
+    try env.put("CLICOLOR", "1");
+
+    const logger = init(env);
+    try testing.expect(logger.stdout.is_color_supported);
+    try testing.expect(logger.stderr.is_color_supported);
+}
+
 const std = @import("std");
 const EnumArray = std.enums.EnumArray;
 const EnvMap = std.process.EnvMap;
 const File = std.fs.File;
 const mem = std.mem;
+const process = std.process;
+const testing = std.testing;

@@ -21,18 +21,18 @@ pub fn deinit(self: Diagnostic) void {
 /// possible error.
 pub fn report(self: *Diagnostic, err: ?anyerror, comptime format: []const u8, args: anytype) anyerror {
     if (self.payload != null) {
-        return error.Recorded;
+        return error.Reported;
     }
 
     if (err) |e| {
         var buf: [max_err_bytes]u8 = undefined;
         const formatted = bufWriteErr(&buf, e);
         self.payload = try fmt.allocPrint(self.gpa, format ++ ": {s}", args ++ .{formatted});
-        return error.Recorded;
+        return error.Reported;
     }
 
     self.payload = try fmt.allocPrint(self.gpa, format, args);
-    return error.Recorded;
+    return error.Reported;
 }
 
 /// This function is useful for concisely recording errors that do not need to be
@@ -74,8 +74,22 @@ pub fn bufWriteErr(buf: []u8, err: anytype) []const u8 {
     return buf[0..i];
 }
 
+test "record()" {
+    var diag = Diagnostic.init(testing.allocator);
+    defer diag.deinit();
+
+    var err = diag.report(error.TestError, "test {s}", .{"error"});
+    try testing.expectEqual(error.Reported, err);
+
+    err = diag.report(error.AnotherTestError, "another test {s}", .{"error"});
+    try testing.expectEqual(error.Reported, err);
+
+    try testing.expectEqualStrings("test error: test error", diag.payload.?);
+}
+
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ascii = std.ascii;
 const assert = std.debug.assert;
 const fmt = std.fmt;
+const testing = std.testing;
