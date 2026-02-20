@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          echo "n" | ./scripts/install.sh
+          ./scripts/install.sh
           ~/.local/bin/cadence --version
 
   install-test-windows:
