@@ -17,7 +17,7 @@ run the command `bun test --timeout 3000` we can run the following command,
 where `{{opts}}` will be replaced with `--timeout 3000`:
 
 ```sh
-cadence run --params "opts=--timeout 3000" test
+cadence run --params opts="--timeout 3000" test
 ```
 
 Default values can be provided to parameters via the `params` property:
