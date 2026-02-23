@@ -1,0 +1,12 @@
+{
+  "input": {
+    "task_names": ["test"]
+  },
+  "expected_nodes": {
+    "test": {
+      "sub_path": ".",
+      "task_name": "test",
+      "cmd": "bun test"
+    }
+  }
+}

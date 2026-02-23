@@ -113,5 +113,5 @@ test "parseParams(): should error given unterminated quotes" {
 const Diagnostic = @import("Diagnostic.zig");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const HashMap = std.StringHashMapUnmanaged;
+const HashMap = std.StringArrayHashMapUnmanaged;
 const testing = std.testing;

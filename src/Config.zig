@@ -15,6 +15,8 @@ pub const Shell = enum {
     powershell,
     sh,
     zsh,
+
+    pub const default = .sh;
 };
 
 pub const Task = union(enum) {
@@ -34,17 +36,19 @@ pub const Task = union(enum) {
 
 pub const ObjectTask = struct {
     aliases: []const []const u8 = &.{},
-    cache: ?struct {
-        inputs: []const []const u8 = &.{},
-        outputs: []const []const u8 = &.{},
-    } = null,
+    cache: ?Cache = null,
     cmd: ?Command = null,
-    depends_on: []const []const u8 = &.{},
+    depends_on: ?[]const []const u8 = null,
     env: json.ArrayHashMap([]const u8) = .{},
     modules: json.ArrayHashMap(Task) = .{},
     params: json.ArrayHashMap(Parameter) = .{},
     skip: bool = false,
     watch: []const []const u8 = &.{},
+};
+
+pub const Cache = struct {
+    inputs: []const []const u8 = &.{},
+    outputs: []const []const u8 = &.{},
 };
 
 pub const Command = union(enum) {
@@ -74,7 +78,7 @@ pub const Parameter = union(enum) {
 };
 
 pub const ObjectParameter = struct {
-    value: []const u8 = "",
+    value: ?[]const u8 = null,
     pass_to: []const []const u8 = &.{},
 };
 
@@ -99,16 +103,23 @@ pub const Parser = struct {
         self.arena.deinit();
     }
 
-    pub fn getOrParse(self: *Parser, absolute_path: []const u8) !*const Config {
-        if (self.cache.get(absolute_path)) |config| {
+    pub fn getValue(self: *Parser, sub_path: []const u8) ?*const Config {
+        if (self.cache.get(sub_path)) |config| {
+            return &config.value;
+        }
+        return null;
+    }
+
+    pub fn getOrParse(self: *Parser, sub_path: []const u8) !*const Config {
+        if (self.cache.get(sub_path)) |config| {
             return &config.value;
         }
 
         var contents_arena = ArenaAllocator.init(self.gpa);
         defer contents_arena.deinit();
-        const contents = self.readFileSmart(contents_arena.allocator(), absolute_path) catch |err| {
+        const contents = self.readFileSmart(contents_arena.allocator(), sub_path) catch |err| {
             return self.diag.report(err, "failed to read '{f}'", .{
-                fs.path.fmtJoin(&.{ absolute_path, filename }),
+                fs.path.fmtJoin(&.{ sub_path, filename }),
             });
         };
 
@@ -119,20 +130,22 @@ pub const Parser = struct {
 
         const arena = self.arena.allocator();
         const config = try arena.create(json.Parsed(Config));
-        config.* = json.parseFromTokenSource(Config, arena, &scanner, .{}) catch |err| {
+        config.* = json.parseFromTokenSource(Config, arena, &scanner, .{
+            .allocate = .alloc_always,
+        }) catch |err| {
             return self.diag.report(err, "failed to parse '{f}', line {d} column {d}", .{
-                fs.path.fmtJoin(&.{ absolute_path, filename }), jd.getLine(), jd.getColumn(),
+                fs.path.fmtJoin(&.{ sub_path, filename }), jd.getLine(), jd.getColumn(),
             });
         };
 
-        const key = try arena.dupe(u8, absolute_path);
+        const key = try arena.dupe(u8, sub_path);
         try self.cache.putNoClobber(arena, key, config);
 
         return &config.value;
     }
 
-    fn readFileSmart(self: *Parser, arena: Allocator, absolute_path: []const u8) ![]const u8 {
-        var dir = try fs.openDirAbsolute(absolute_path, .{});
+    fn readFileSmart(self: *Parser, arena: Allocator, sub_path: []const u8) ![]const u8 {
+        var dir = try fs.cwd().openDir(sub_path, .{});
         defer dir.close();
 
         const file = try dir.openFile(filename, .{});
@@ -159,18 +172,12 @@ test "Parser.getOrParse(): should parse the same file faster the second time" {
     var parser = Parser.init(testing.allocator, &diag);
     defer parser.deinit();
 
-    const cwd = try process.getCwdAlloc(gpa);
-    defer gpa.free(cwd);
-
-    const test_dir = try fs.path.join(gpa, &.{ cwd, "testdata/Config" });
-    defer gpa.free(test_dir);
-
     const start = time.nanoTimestamp();
-    _ = try parser.getOrParse(test_dir);
+    _ = try parser.getOrParse("testdata/Config");
     const elapsed = time.nanoTimestamp() - start;
 
     const cached_start = time.nanoTimestamp();
-    _ = try parser.getOrParse(test_dir);
+    _ = try parser.getOrParse("testdata/Config");
     const cached_elapsed = time.nanoTimestamp() - cached_start;
 
     try testing.expect(cached_elapsed < elapsed);

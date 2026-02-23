@@ -1,0 +1,42 @@
+{
+  "input": {
+    "sub_path": "client",
+    "task_names": ["build"]
+  },
+  "expected_nodes": {
+    "build": {
+      "sub_path": ".",
+      "task_name": "build",
+      "cmd": "bun build ./cli.ts --compile",
+      "dependencies": {
+        "depends_on": ["test", "../server:build"]
+      }
+    },
+    "test": {
+      "sub_path": ".",
+      "task_name": "test",
+      "cmd": "bun test",
+      "dependencies": {
+        "depends_on": ["../server:test"],
+        "dependents": ["build"]
+      }
+    },
+    "../server:build": {
+      "sub_path": "../server",
+      "task_name": "build",
+      "cmd": "bun build ./cli.ts --compile",
+      "dependencies": {
+        "depends_on": ["../server:test"],
+        "dependents": ["build"]
+      }
+    },
+    "../server:test": {
+      "sub_path": "../server",
+      "task_name": "test",
+      "cmd": "bun test",
+      "dependencies": {
+        "dependents": ["test", "../server:build"]
+      }
+    }
+  }
+}

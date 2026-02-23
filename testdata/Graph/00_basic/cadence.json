@@ -1,0 +1,6 @@
+{
+  "root": true,
+  "tasks": {
+    "test": "bun test"
+  }
+}

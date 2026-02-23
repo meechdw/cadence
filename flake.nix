@@ -23,7 +23,6 @@
         pkgs = nixpkgs.legacyPackages.${system};
         zig = zig-overlay.packages.${system}."0.15.1";
         zls = zls-overlay.packages.${system}.zls;
-
       in
       {
         packages = {

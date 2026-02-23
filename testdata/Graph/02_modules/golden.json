@@ -1,0 +1,32 @@
+{
+  "input": {
+    "workspace": ["billing/client", "billing/server", "metrics/client", "metrics/server"],
+    "task_names": ["test"]
+  },
+  "expected_nodes": {
+    "billing/client:test:client": {
+      "sub_path": "billing/client",
+      "task_name": "test",
+      "module": "client",
+      "cmd": "rake test"
+    },
+    "billing/server:test:server": {
+      "sub_path": "billing/server",
+      "task_name": "test",
+      "module": "server",
+      "cmd": "zig build test"
+    },
+    "metrics/client:test:client": {
+      "sub_path": "metrics/client",
+      "task_name": "test",
+      "module": "client",
+      "cmd": "bun test"
+    },
+    "metrics/server:test:server": {
+      "sub_path": "metrics/server",
+      "task_name": "test",
+      "module": "server",
+      "cmd": "zig build test"
+    }
+  }
+}

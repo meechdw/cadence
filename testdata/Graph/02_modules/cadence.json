@@ -1,0 +1,15 @@
+{
+  "root": true,
+  "modules": {
+    "client": ["package.json"],
+    "server": ["build.zig"]
+  },
+  "tasks": {
+    "test": {
+      "modules": {
+        "client": "bun test",
+        "server": "zig build test"
+      }
+    }
+  }
+}

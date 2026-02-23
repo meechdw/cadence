@@ -17,6 +17,7 @@ pub fn build(b: *Build) void {
             .imports = &.{
                 .{ .name = "build", .module = build_zig_zon },
                 .{ .name = "clap", .module = b.dependency("clap", .{}).module("clap") },
+                .{ .name = "zlob", .module = b.dependency("zlob", .{}).module("zlob") },
             },
         }),
     });
@@ -37,6 +38,9 @@ pub fn build(b: *Build) void {
             .root_source_file = b.path("src/test.zig"),
             .target = target,
             .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zlob", .module = b.dependency("zlob", .{}).module("zlob") },
+            },
         }),
         .filters = b.args orelse &.{},
     });

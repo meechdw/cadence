@@ -15,11 +15,16 @@ pub fn deinit(self: Diagnostic) void {
     }
 }
 
+pub const ReportError = error{
+    OutOfMemory,
+    Reported,
+};
+
 /// Records non-clobbering error information. Not clobbering means that we can
 /// provide fallback error reporting throughout the codebase, providing the user with
 /// nice error messages without requiring us to provide error information for every
 /// possible error.
-pub fn report(self: *Diagnostic, err: ?anyerror, comptime format: []const u8, args: anytype) anyerror {
+pub fn report(self: *Diagnostic, err: ?anyerror, comptime format: []const u8, args: anytype) ReportError {
     if (self.payload != null) {
         return error.Reported;
     }

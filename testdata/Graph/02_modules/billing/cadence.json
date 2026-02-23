@@ -1,0 +1,12 @@
+{
+  "modules": {
+    "client": ["Gemfile"]
+  },
+  "tasks": {
+    "test": {
+      "modules": {
+        "client": "rake test"
+      }
+    }
+  }
+}
