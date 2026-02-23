@@ -74,6 +74,7 @@ fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
         .arguments = "<command>",
         .subcommands = StaticStringMap([]const u8).initComptime(.{
             .{ "clean", "Clean the cache" },
+            .{ "help", "Print help menu and exit" },
             .{ "run", "Run tasks" },
             .{ "tree", "Print the dependency tree" },
             .{ "version", "Print version and exit" },
@@ -86,6 +87,12 @@ fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
 
     if (res.args.version != 0) {
         return logger.stdout.print("{s}\n", .{build.version});
+    }
+
+    if (res.args.cwd) |cwd| {
+        process.changeCurDir(cwd) catch |err| {
+            return diag.report(err, "failed to change current directory", .{});
+        };
     }
 
     const command = res.positionals[0] orelse unreachable;
