@@ -23,7 +23,7 @@ run *args:
     zig build run -- {{args}}
 
 test *filters:
-    zig build test --summary all -- {{filters}}
+    zig build test --summary all -- "{{filters}}"
 
 watch +recipes:
     watchexec -i .zig-cache -i zig-out -- just {{recipes}}

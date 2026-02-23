@@ -1,0 +1,47 @@
+{
+  "workspace": ["client", "lib", "server"],
+  "modules": {
+    "bun": ["package.json"],
+    "zig": ["build.zig"]
+  },
+  "tasks": {
+    "build": {
+      "aliases": ["b"],
+      "depends_on": ["test", "#build"],
+      "modules": {
+        "zig": {
+          "cmd": "zig build -Doptimize={{mode}} {{opts}}",
+          "params": {
+            "mode": "Debug",
+            "opts": {
+              "pass_to": ["test", "build"]
+            }
+          }
+        }
+      }
+    },
+    "lint": {
+      "aliases": ["l"],
+      "modules": {
+        "bun": ["bun tsc", "prettier --check ."],
+        "zig": "zig fmt --check ."
+      }
+    },
+    "test": {
+      "aliases": ["t"],
+      "depends_on": ["#test"],
+      "modules": {
+        "bun": "bun test {{opts}}",
+        "zig": {
+          "cmd": "zig build test --summary {{summary}} {{opts}}",
+          "params": {
+            "summary": "all",
+            "opts": {
+              "pass_to": ["test"]
+            }
+          }
+        }
+      }
+    }
+  }
+}
