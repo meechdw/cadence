@@ -6,9 +6,7 @@ the following configuration:
 ```json
 {
   "tasks": {
-    "test": {
-      "cmd": "bun test {{opts}}"
-    }
+    "test": "bun test {{opts}}"
   }
 }
 ```

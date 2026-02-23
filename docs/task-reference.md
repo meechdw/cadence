@@ -118,12 +118,8 @@ with the root-level [`modules`](configuration.md#modules) property.
   "tasks": {
     "test": {
       "modules": {
-        "client": {
-          "cmd": "bun test"
-        },
-        "server": {
-          "cmd": "go test ./..."
-        }
+        "client": "bun test",
+        "server": "go test ./..."
       }
     }
   }

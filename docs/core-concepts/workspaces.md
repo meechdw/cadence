@@ -29,12 +29,8 @@ Assume the codebase contains `client` and `server` directories nested under an
     "test": {
       "depends_on": ["#test"],
       "modules": {
-        "client": {
-          "cmd": "bun test"
-        },
-        "server": {
-          "cmd": "go test ./..."
-        }
+        "client": "bun test",
+        "server": "go test ./..."
       }
     }
   }

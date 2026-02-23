@@ -43,12 +43,8 @@ property is used in combination with task-level
     "test": {
       "depends_on": ["#test"],
       "modules": {
-        "client": {
-          "cmd": "bun test"
-        },
-        "server": {
-          "cmd": "go test ./..."
-        }
+        "client": "bun test",
+        "server": "go test ./..."
       }
     }
   }
@@ -84,9 +80,7 @@ A map from task names to [task definitions](task-reference.md).
 ```json
 {
   "tasks": {
-    "test": {
-      "cmd": "bun test"
-    }
+    "test": "bun test"
   }
 }
 ```
@@ -101,9 +95,7 @@ Traversal will stop when this property is encountered. See
 {
   "workspace": ["workspace/*"],
   "tasks": {
-    "test": {
-      "cmd": "bun test"
-    }
+    "test": "bun test"
   }
 }
 ```
