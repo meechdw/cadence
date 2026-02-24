@@ -1,6 +1,6 @@
 site_name: Cadence
 site_url: https://meechdw.github.io/cadence
-site_description: High-performance task orchestration system for any codebase.
+site_description: High-performance, cross-platform task orchestration system for any codebase.
 
 theme:
   name: material

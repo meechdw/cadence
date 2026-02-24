@@ -54,7 +54,7 @@
             '';
 
             meta = with pkgs.lib; {
-              description = "High-performance task orchestration system for any codebase";
+              description = "High-performance, cross-platform task orchestration system for any codebase";
               homepage = "https://github.com/meechdw/cadence";
               license = licenses.mit;
               platforms = platforms.all;

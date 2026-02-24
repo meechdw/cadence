@@ -1,6 +1,6 @@
 # Cadence
 
-High-performance task orchestration system for any codebase.
+High-performance, cross-platform task orchestration system for any codebase.
 
 !!! warning
 

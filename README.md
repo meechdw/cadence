@@ -4,7 +4,7 @@
   <br>Cadence
 </h1>
   <p align="center">
-    High-performance task orchestration system for any codebase.
+    High-performance, cross-platform task orchestration system for any codebase.
   </p>
 </p>
 

@@ -70,7 +70,7 @@ fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
 
     const opts = HelpOptions{
         .name = name,
-        .description = "High-performance task orchestration system for any codebase",
+        .description = "High-performance, cross-platform task orchestration system for any codebase",
         .arguments = "<command>",
         .subcommands = StaticStringMap([]const u8).initComptime(.{
             .{ "clean", "Clean the cache" },
