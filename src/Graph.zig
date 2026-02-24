@@ -341,12 +341,12 @@ fn populateDependencyNodes(
         const config = self.walker.parser.getValue(node.sub_path) orelse return;
 
         for (config.dependencies) |sub_path| {
-            const resolved = try fs.path.resolve(self.gpa, &.{ node.sub_path, sub_path });
+            const resolved = try fs.path.resolvePosix(self.gpa, &.{ node.sub_path, sub_path });
+            const openable = if (resolved.len == 0) "." else resolved;
             defer self.gpa.free(resolved);
 
-            const openable_resolved = if (resolved.len == 0) "." else resolved;
-            var dir = fs.cwd().openDir(openable_resolved, .{}) catch |err| {
-                return self.diag.report(err, "dependency directory resolved to '{s}'", .{openable_resolved});
+            var dir = fs.cwd().openDir(openable, .{}) catch |err| {
+                return self.diag.report(err, "dependency directory resolved to '{s}'", .{sub_path});
             };
             dir.close();
 
@@ -357,6 +357,19 @@ fn populateDependencyNodes(
     }
 
     try self.populateNode(stack, params, node.sub_path, task_name, node);
+}
+
+fn normalizeSubpath(self: *Graph, paths: []const []const u8) ![]const u8 {
+    const resolved = try fs.path.resolvePosix(self.gpa, paths);
+    const sub_path = if (resolved.len == 0) "." else resolved;
+
+    var dir = fs.cwd().openDir(sub_path, .{}) catch |err| {
+        defer self.gpa.free(resolved);
+        return self.diag.report(err, "dependency directory resolved to '{s}'", .{sub_path});
+    };
+    dir.close();
+
+    return resolved;
 }
 
 pub const Node = struct {
