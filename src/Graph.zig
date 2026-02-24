@@ -32,6 +32,9 @@ pub fn populate(
     task_names: []const []const u8,
     params: []const []const u8,
 ) !void {
+    assert(task_names.len != 0);
+    assert(task_names.len >= params.len);
+
     for (workspace) |sub_path| {
         var stack = try self.walker.walk(sub_path);
         if (stack.configs.len != 0) {
