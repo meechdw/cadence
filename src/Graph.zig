@@ -45,13 +45,9 @@ pub fn populate(
         defer aliases.deinit(self.gpa);
         stack.reset();
 
-        var parsed_params = HashMap(HashMap([]const u8)){};
-        defer parsed_params.deinit(self.gpa);
-        for (params, 0..) |param, i| {
-            const real_task_name = realTaskName(aliases, task_names[i]);
-            const task_params = try parse_params(self.gpa, self.diag, param);
-            try parsed_params.putNoClobber(self.gpa, real_task_name, task_params);
-        }
+        var arena = ArenaAllocator.init(self.gpa);
+        defer arena.deinit();
+        const parsed_params = try self.parseAllParams(arena.allocator(), task_names, params, aliases);
 
         for (task_names) |name| {
             const real_task_name = realTaskName(aliases, name);
@@ -62,6 +58,24 @@ pub fn populate(
     if (self.nodes.count() == 0) {
         return self.diag.report(null, "no tasks were found to be executed", .{});
     }
+}
+
+fn parseAllParams(
+    self: *Graph,
+    arena: Allocator,
+    task_names: []const []const u8,
+    params: []const []const u8,
+    aliases: HashMap([]const []const u8),
+) !HashMap(HashMap([]const u8)) {
+    var parsed_params = HashMap(HashMap([]const u8)){};
+
+    for (params, 0..) |param, i| {
+        const real_task_name = realTaskName(aliases, task_names[i]);
+        const task_params = try parseParams(arena, self.diag, param);
+        try parsed_params.putNoClobber(arena, real_task_name, task_params);
+    }
+
+    return parsed_params;
 }
 
 const PopulateNodeError = error{
@@ -356,7 +370,7 @@ fn populateDependencyNodes(
     try self.populateNode(stack, params, node.sub_path, task_name, node);
 }
 
-fn normalizeSubpath(self: *Graph, paths: []const []const u8) ![]const u8 {
+fn normalizeSubpaths(self: *Graph, paths: []const []const u8) ![]const u8 {
     const resolved = try fs.path.resolvePosix(self.gpa, paths);
     const sub_path = if (resolved.len == 0) "." else resolved;
 
