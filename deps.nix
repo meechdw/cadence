@@ -14,4 +14,12 @@ linkFarm "zig-packages" [
       hash = "sha256-XytqwtoE0xaR43YustgK68sAQPVfC0Dt+uCs8UTfkbU=";
     };
   }
+  {
+    name = "zlob-1.2.9-zzE2lTSzBQCVffT9R1cuizDZuf7tCnw6mD4SGc2p5Trc";
+    path = fetchgit {
+      url = "https://github.com/dmtrKovalenko/zlob";
+      rev = "5882d53d5d7e34cbe2465f0aaa45e2c902bee0df";
+      hash = "sha256-52+g969K0DT5E2KxEEoLSsifW7PGOyu2IHyyrPlbFKI=";
+    };
+  }
 ]
