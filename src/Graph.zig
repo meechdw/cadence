@@ -545,7 +545,11 @@ const Module = struct {
             defer gpa.free(joined);
 
             var results = try zlob.match(gpa, joined, ZlobFlags{
+                .nosort = true,
                 .brace = true,
+                .gitignore = true,
+                .doublestar_recursive = true,
+                .extglob = true,
             }) orelse continue;
             defer results.deinit();
             if (results.len() > 0) {
