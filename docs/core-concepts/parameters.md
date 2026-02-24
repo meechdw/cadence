@@ -20,7 +20,8 @@ where `{{opts}}` will be replaced with `--timeout 3000`:
 cadence run --params opts="--timeout 3000" test
 ```
 
-Default values can be provided to parameters via the `params` property:
+Default values can be provided to parameters via the
+[`params`](../task-reference.md#params) property:
 
 ```json
 {

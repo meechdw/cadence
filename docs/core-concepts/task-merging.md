@@ -65,5 +65,6 @@ definition will be:
 }
 ```
 
-Note that while map properties such as `params` and `env` are merged, array
-properties such as `depends_on` are overridden.
+Note that while map properties such as [`params`](../task-reference.md#params)
+and [`env`](../task-reference.md#env) are merged, array properties such as
+[`depends_on`](../task-reference.md#depends_on) are overridden.
