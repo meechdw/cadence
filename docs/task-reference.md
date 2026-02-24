@@ -159,7 +159,8 @@ with `value` and `pass_to` properties. See
 
 Whether to skip this task or not. When `true` in the starting directory, the
 task will not be run. When `true` in a parent directory, the task definition in
-that file will not contribute to the final merged definition.
+that file will not contribute to the final merged definition. When used at the
+root-level of a task, it also skips the tasks for each module.
 
 ```json
 {
