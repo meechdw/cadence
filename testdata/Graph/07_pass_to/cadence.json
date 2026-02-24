@@ -1,0 +1,25 @@
+{
+  "root": true,
+  "tasks": {
+    "build": {
+      "cmd": "bun --cwd {{cwd}} build ./cli.ts --compile",
+      "depends_on": ["#build", "test"],
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#build", "test"]
+        }
+      }
+    },
+    "test": {
+      "cmd": "bun --cwd {{cwd}} test",
+      "depends_on": ["#test"],
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#test"]
+        }
+      }
+    }
+  }
+}

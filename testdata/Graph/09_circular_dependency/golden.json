@@ -1,0 +1,6 @@
+{
+  "input": {
+    "task_names": ["build"]
+  },
+  "expected_error": "circular dependency"
+}

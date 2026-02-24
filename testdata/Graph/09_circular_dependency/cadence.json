@@ -1,0 +1,17 @@
+{
+  "root": true,
+  "tasks": {
+    "build": {
+      "cmd": "bun build ./cli.ts --compile",
+      "depends_on": ["test"]
+    },
+    "test": {
+      "cmd": "bun test",
+      "depends_on": ["clean"]
+    },
+    "clean": {
+      "cmd": "rm -rf .zig-cache zig-out",
+      "depends_on": ["build"]
+    }
+  }
+}

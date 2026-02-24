@@ -1,0 +1,79 @@
+{
+  "input": {
+    "sub_path": "server",
+    "task_names": ["build"],
+    "params": ["cwd=app"]
+  },
+  "expected_nodes": {
+    "build": {
+      "sub_path": ".",
+      "task_name": "build",
+      "cmd": "bun --cwd {{cwd}} build ./cli.ts --compile",
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#build", "test"]
+        }
+      },
+      "cli_params": {
+        "cwd": "app"
+      },
+      "dependencies": {
+        "depends_on": ["test", "../lib:build"]
+      }
+    },
+    "../lib:build": {
+      "sub_path": "../lib",
+      "task_name": "build",
+      "cmd": "bun --cwd {{cwd}} build ./cli.ts --compile",
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#build", "test"]
+        }
+      },
+      "cli_params": {
+        "cwd": "app"
+      },
+      "dependencies": {
+        "depends_on": ["../lib:test"],
+        "dependents": ["build"]
+      }
+    },
+    "test": {
+      "sub_path": ".",
+      "task_name": "test",
+      "cmd": "bun --cwd {{cwd}} test",
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#test"]
+        }
+      },
+      "cli_params": {
+        "cwd": "app"
+      },
+      "dependencies": {
+        "depends_on": ["../lib:test"],
+        "dependents": ["build"]
+      }
+    },
+    "../lib:test": {
+      "sub_path": "../lib",
+      "task_name": "test",
+      "cmd": "bun --cwd {{cwd}} test",
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["#test"]
+        }
+      },
+      "cli_params": {
+        "cwd": "app"
+      },
+      "dependencies": {
+        "dependents": ["test", "../lib:build"]
+      }
+    }
+  }
+}

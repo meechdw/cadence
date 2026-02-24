@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "dependencies": ["does_not_exist"],
+  "tasks": {
+    "test": {
+      "cmd": "bun test",
+      "depends_on": ["#test"]
+    }
+  }
+}

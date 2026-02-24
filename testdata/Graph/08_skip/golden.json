@@ -1,0 +1,12 @@
+{
+  "input": {
+    "task_names": ["build", "test"]
+  },
+  "expected_nodes": {
+    "build": {
+      "sub_path": ".",
+      "task_name": "build",
+      "cmd": "bun build ./cli.ts --compile"
+    }
+  }
+}

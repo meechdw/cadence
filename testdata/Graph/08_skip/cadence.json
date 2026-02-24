@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "tasks": {
+    "build": "bun build ./cli.ts --compile",
+    "test": {
+      "cmd": "bun test",
+      "skip": true
+    }
+  }
+}

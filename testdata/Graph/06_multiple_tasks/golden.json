@@ -1,0 +1,28 @@
+{
+  "input": {
+    "task_names": ["build", "test", "clean"]
+  },
+  "expected_nodes": {
+    "build": {
+      "sub_path": ".",
+      "task_name": "build",
+      "cmd": "bun build",
+      "dependencies": {
+        "depends_on": ["test"]
+      }
+    },
+    "test": {
+      "sub_path": ".",
+      "task_name": "test",
+      "cmd": "bun test",
+      "dependencies": {
+        "dependents": ["build"]
+      }
+    },
+    "clean": {
+      "sub_path": ".",
+      "task_name": "clean",
+      "cmd": "rm -rf .zig-cache zig-out"
+    }
+  }
+}

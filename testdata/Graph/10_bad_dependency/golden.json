@@ -1,0 +1,6 @@
+{
+  "input": {
+    "task_names": ["test"]
+  },
+  "expected_error": "failed to resolve dependency directory"
+}

@@ -357,7 +357,7 @@ fn populateDependencyNodes(
             defer self.gpa.free(resolved);
 
             var dir = fs.cwd().openDir(openable, .{}) catch |err| {
-                return self.diag.report(err, "dependency directory resolved to '{s}'", .{sub_path});
+                return self.diag.report(err, "failed to resolve dependency directory '{s}'", .{sub_path});
             };
             dir.close();
 
@@ -564,7 +564,8 @@ const Golden = struct {
         sub_path: []const u8 = ".",
         params: []const []const u8 = &.{},
     },
-    expected_nodes: ExpectedNodes,
+    expected_nodes: ExpectedNodes = .{},
+    expected_error: ?[]const u8 = null,
 
     const ExpectedNodes = json.ArrayHashMap(struct {
         sub_path: []const u8,
@@ -675,12 +676,19 @@ test "populate(): should populate the graph with the expected nodes and dependen
         var graph = Graph.init(gpa, &diag, &walker);
         defer graph.deinit();
 
-        try graph.populate(
+        const res = graph.populate(
             golden.value.input.workspace,
             golden.value.input.task_names,
             golden.value.input.params,
         );
 
+        if (golden.value.expected_error) |err| {
+            try testing.expectError(error.Reported, res);
+            try testing.expect(mem.indexOf(u8, diag.payload.?, err) != null);
+            return;
+        }
+
+        try res;
         try expectEqualGraph(graph.nodes, golden.value.expected_nodes);
     }
 }

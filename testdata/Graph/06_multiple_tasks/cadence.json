@@ -1,0 +1,11 @@
+{
+  "root": true,
+  "tasks": {
+    "build": {
+      "cmd": "bun build",
+      "depends_on": ["test"]
+    },
+    "test": "bun test",
+    "clean": "rm -rf .zig-cache zig-out"
+  }
+}
