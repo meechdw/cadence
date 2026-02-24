@@ -13,6 +13,7 @@ configuration:
   "tasks": {
     "test": {
       "cmd": "bun test --timeout {{timeout}}",
+      "depends_on": ["#test"],
       "params": {
         "timeout": "3000"
       },
@@ -32,6 +33,7 @@ configuration:
 {
   "tasks": {
     "test": {
+      "depends_on": ["build"],
       "env": {
         "PGHOST": "postgres",
         "PORT": "8000"
@@ -49,6 +51,7 @@ definition will be:
   "tasks": {
     "test": {
       "cmd": "bun test --timeout {{timeout}}",
+      "depends_on": ["build"],
       "params": {
         "timeout": "3000"
       },
@@ -61,3 +64,6 @@ definition will be:
   }
 }
 ```
+
+Note that while map properties such as `params` and `env` are merged, array
+properties such as `depends_on` are overridden.
