@@ -69,10 +69,11 @@ cadence run --params "outfile=mycli" --params "timeout=5000 opts='--coverage --r
 
 ## Passing Parameters to Dependencies
 
-Parameters can be passed to dependencies using the `pass_to` property. When a
-parameter needs to be forwarded to a dependency, the object form is used with
-both `value` and `pass_to` required. The forwarded value overrides any default
-the dependency has for that parameter.
+Parameters can be passed to dependencies using the `pass_to` property. Use the
+object form when you need `pass_to`, either alone to forward the parameter's
+current value to a dependency, or combined with `value` to forward a specific
+value. The forwarded value overrides any default the dependency has for that
+parameter.
 
 In the following example, `test` defaults its `cwd` parameter to `.`, but when
 run as dependency of `build`, it receives `./app` instead:
