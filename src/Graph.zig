@@ -636,6 +636,12 @@ fn expectEqualDependencies(expected_ids: []const []const u8, actual_nodes: []con
 test "populate(): should populate the graph with the expected nodes and dependencies" {
     const gpa = testing.allocator;
 
+    const original_cwd = try process.getCwdAlloc(gpa);
+    defer {
+        process.changeCurDir(original_cwd) catch @panic("failed to revert current working directory");
+        gpa.free(original_cwd);
+    }
+
     var dir = try fs.cwd().openDir("testdata/Graph", .{ .iterate = true });
     var iter = dir.iterate();
     defer dir.close();

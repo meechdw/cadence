@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "tasks": {
+    "build": {
+      "cmd": "bun build ./cli.ts --compile",
+      "depends_on": ["#build", "test"]
+    },
+    "test": {
+      "cmd": "bun test",
+      "depends_on": ["#test"]
+    }
+  }
+}

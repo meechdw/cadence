@@ -5,4 +5,5 @@ comptime {
     _ = @import("TreeWalker.zig");
     _ = @import("parse_params.zig");
     _ = @import("Graph.zig");
+    _ = @import("tree.zig");
 }

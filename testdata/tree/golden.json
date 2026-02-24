@@ -1,0 +1,14 @@
+{
+  "cwd": "client",
+  "task_names": ["build"],
+  "expected_tree": {
+    "build": {
+      "../server:build": {
+        "../server:test": {}
+      },
+      "test": {
+        "../server:test": {}
+      }
+    }
+  }
+}
