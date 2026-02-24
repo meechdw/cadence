@@ -95,12 +95,9 @@ fn populateNode(
     task_name: []const u8,
     prev_node: ?*Node,
 ) PopulateNodeError!void {
-    const absolute_path = try fs.path.resolve(self.gpa, &.{ self.walker.cwd, sub_path });
-    defer self.gpa.free(absolute_path);
-
     // Creating the modules before the main processing loop allows us to keep them on
     // the stack.
-    var modules = try self.createModules(stack, absolute_path);
+    var modules = try self.createModules(stack, sub_path);
     defer modules.deinit(self.gpa);
     stack.reset();
 
@@ -150,12 +147,12 @@ fn populateNode(
     }
 }
 
-fn createModules(self: *Graph, stack: *TreeWalker.Iterator, absolute_path: []const u8) !HashMap(Module) {
+fn createModules(self: *Graph, stack: *TreeWalker.Iterator, sub_path: []const u8) !HashMap(Module) {
     var modules = HashMap(Module){};
     while (stack.next()) |config| {
         for (config.modules.map.keys()) |module_type| {
             if (!modules.contains(module_type)) {
-                const module = Module.init(absolute_path);
+                const module = Module.init(sub_path);
                 try modules.putNoClobber(self.gpa, module_type, module);
             }
         }
@@ -510,12 +507,12 @@ const MergedProperties = struct {
 };
 
 const Module = struct {
-    absolute_path: []const u8,
+    sub_path: []const u8,
     props: MergedProperties = .{},
     is_active: bool = false,
 
-    fn init(absolute_path: []const u8) Module {
-        return .{ .absolute_path = absolute_path };
+    fn init(sub_path: []const u8) Module {
+        return .{ .sub_path = sub_path };
     }
 
     fn deinit(self: *Module, gpa: Allocator) void {
@@ -530,7 +527,10 @@ const Module = struct {
 
     fn dirHasMatches(self: Module, gpa: Allocator, patterns: []const []const u8) !bool {
         for (patterns) |pattern| {
-            var results = try zlob.matchAt(gpa, self.absolute_path, pattern, ZlobFlags{
+            const joined = try fs.path.resolvePosix(gpa, &.{ self.sub_path, pattern });
+            defer gpa.free(joined);
+
+            var results = try zlob.match(gpa, joined, ZlobFlags{
                 .brace = true,
             }) orelse continue;
             defer results.deinit();
