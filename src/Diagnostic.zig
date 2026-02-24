@@ -32,12 +32,19 @@ pub fn report(self: *Diagnostic, err: ?anyerror, comptime format: []const u8, ar
     if (err) |e| {
         var buf: [max_err_bytes]u8 = undefined;
         const formatted = bufWriteErr(&buf, e);
-        self.payload = try fmt.allocPrint(self.gpa, format ++ ": {s}", args ++ .{formatted});
+        try self.updatePayload(format ++ ": {s}", args ++ .{formatted});
         return error.Reported;
     }
 
-    self.payload = try fmt.allocPrint(self.gpa, format, args);
+    try self.updatePayload(format, args);
     return error.Reported;
+}
+
+fn updatePayload(self: *Diagnostic, comptime format: []const u8, args: anytype) !void {
+    self.payload = try fmt.allocPrint(self.gpa, format, args);
+    if (builtin.is_test) {
+        debug.print("reported: {s}\n", .{self.payload.?});
+    }
 }
 
 /// This function is useful for concisely recording errors that do not need to be
@@ -92,9 +99,11 @@ test "record()" {
     try testing.expectEqualStrings("test error: test error", diag.payload.?);
 }
 
+const builtin = @import("builtin");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ascii = std.ascii;
 const assert = std.debug.assert;
+const debug = std.debug;
 const fmt = std.fmt;
 const testing = std.testing;
