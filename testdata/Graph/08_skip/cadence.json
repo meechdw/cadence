@@ -4,7 +4,10 @@
     "build": "bun build ./cli.ts --compile",
     "test": {
       "cmd": "bun test",
-      "skip": true
+      "skip": true,
+      "modules": {
+        "go": "go test ./..."
+      }
     }
   }
 }
