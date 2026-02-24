@@ -1,16 +1,17 @@
 {
   "task_names": ["t"],
-  "params": ["opts=--coverage"],
+  "params": ["bun_opts='--cwd src' test_opts=--coverage"],
   "expected_nodes": {
     "test": {
       "sub_path": ".",
       "task_name": "test",
-      "cmd": "bun test --timeout {{timeout}} {{opts}}",
+      "cmd": "bun test --timeout {{timeout}} {{test_opts}}",
       "params": {
         "timeout": "3000"
       },
       "cli_params": {
-        "opts": "--coverage"
+        "bun_opts": "--cwd src",
+        "test_opts": "--coverage"
       }
     }
   }

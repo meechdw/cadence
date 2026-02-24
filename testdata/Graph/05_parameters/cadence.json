@@ -3,7 +3,7 @@
   "tasks": {
     "test": {
       "aliases": ["t"],
-      "cmd": "bun test --timeout {{timeout}} {{opts}}",
+      "cmd": "bun {{bun_opts}} test --timeout {{timeout}} {{test_opts}}",
       "params": {
         "timeout": "3000"
       }
