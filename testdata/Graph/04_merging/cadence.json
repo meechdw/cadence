@@ -1,0 +1,21 @@
+{
+  "root": true,
+  "modules": {
+    "bun": ["package.json"]
+  },
+  "tasks": {
+    "test": {
+      "modules": {
+        "bun": {
+          "cmd": "bun --cwd {{cwd}} test --timeout {{timeout}}",
+          "params": {
+            "cwd": {
+              "pass_to": ["build"]
+            },
+            "timeout": "3000"
+          }
+        }
+      }
+    }
+  }
+}

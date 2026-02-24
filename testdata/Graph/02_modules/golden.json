@@ -14,7 +14,7 @@
       "sub_path": "billing/server",
       "task_name": "test",
       "module": "server",
-      "cmd": "zig build test"
+      "cmd": "go test ./..."
     },
     "metrics/client:test:client": {
       "sub_path": "metrics/client",
@@ -26,7 +26,7 @@
       "sub_path": "metrics/server",
       "task_name": "test",
       "module": "server",
-      "cmd": "zig build test"
+      "cmd": "go test ./..."
     }
   }
 }

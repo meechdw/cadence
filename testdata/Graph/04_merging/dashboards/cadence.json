@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "test": {
+      "params": {
+        "cwd": "src"
+      },
+      "env": {
+        "PGHOST": "127.0.0.1",
+        "PGPASSWORD": "password"
+      }
+    }
+  }
+}

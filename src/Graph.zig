@@ -552,11 +552,12 @@ const Module = struct {
                 return true;
             }
         }
+
         return false;
     }
 };
 
-const GoldenFile = struct {
+const Golden = struct {
     input: struct {
         task_names: []const []const u8,
         workspace: []const []const u8 = &.{"."},
@@ -580,7 +581,7 @@ const GoldenFile = struct {
     });
 };
 
-fn expectEqualGraph(actual_nodes: HashMap(*Node), expected_nodes: GoldenFile.ExpectedNodes) !void {
+fn expectEqualGraph(actual_nodes: HashMap(*Node), expected_nodes: Golden.ExpectedNodes) !void {
     try testing.expectEqual(expected_nodes.map.count(), actual_nodes.count());
 
     var iter = expected_nodes.map.iterator();
@@ -593,9 +594,9 @@ fn expectEqualGraph(actual_nodes: HashMap(*Node), expected_nodes: GoldenFile.Exp
         try testing.expectEqualStrings(expected_node.task_name, actual_node.task_name);
         try testing.expectEqualDeep(expected_node.cmd, actual_node.cmd);
 
-        try testing.expectEqualDeep(expected_node.params.map, actual_node.params);
-        try testing.expectEqualDeep(expected_node.cli_params.map, actual_node.cli_params);
-        try testing.expectEqualDeep(expected_node.env.map, actual_node.env);
+        try expectEqualHashMaps(Parameter, expected_node.params.map, actual_node.params);
+        try expectEqualHashMaps([]const u8, expected_node.cli_params.map, actual_node.cli_params);
+        try expectEqualHashMaps([]const u8, expected_node.env.map, actual_node.env);
 
         try testing.expectEqual(expected_node.dependencies.depends_on.len, actual_node.indegree);
         try expectEqualDependencies(
@@ -606,6 +607,17 @@ fn expectEqualGraph(actual_nodes: HashMap(*Node), expected_nodes: GoldenFile.Exp
             expected_node.dependencies.depends_on,
             actual_node.dependencies.depends_on.items,
         );
+    }
+}
+
+fn expectEqualHashMaps(comptime T: type, expected_map: HashMap(T), actual_map: HashMap(T)) !void {
+    try testing.expectEqual(expected_map.count(), actual_map.count());
+    var iter = expected_map.iterator();
+    while (iter.next()) |entry| {
+        const expected_key = entry.key_ptr.*;
+        const expected_value = entry.value_ptr.*;
+        const actual_value = actual_map.get(expected_key).?;
+        try testing.expectEqualDeep(expected_value, actual_value);
     }
 }
 
@@ -641,7 +653,7 @@ test "populate(): should populate the graph with the expected nodes and dependen
         const contents = try reader.interface.allocRemaining(gpa, .unlimited);
         defer gpa.free(contents);
 
-        const golden = try json.parseFromSlice(GoldenFile, gpa, contents, .{ .allocate = .alloc_always });
+        const golden = try json.parseFromSlice(Golden, gpa, contents, .{ .allocate = .alloc_always });
         defer golden.deinit();
 
         var sub_dir = try dir.openDir(golden.value.input.sub_path, .{});
@@ -683,7 +695,7 @@ const Task = Config.Task;
 const Shell = Config.Shell;
 const Diagnostic = @import("Diagnostic.zig");
 const TreeWalker = @import("TreeWalker.zig");
-const parse_params = @import("parse_params.zig").parseParams;
+const parseParams = @import("parse_params.zig").parseParams;
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;

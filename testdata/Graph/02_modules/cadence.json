@@ -2,13 +2,13 @@
   "root": true,
   "modules": {
     "client": ["package.json"],
-    "server": ["build.zig"]
+    "server": ["go.mod"]
   },
   "tasks": {
     "test": {
       "modules": {
         "client": "bun test",
-        "server": "zig build test"
+        "server": "go test ./..."
       }
     }
   }

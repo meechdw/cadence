@@ -1,0 +1,25 @@
+{
+  "input": {
+    "sub_path": "dashboards/billing",
+    "task_names": ["test"]
+  },
+  "expected_nodes": {
+    "test:bun": {
+      "sub_path": ".",
+      "task_name": "test",
+      "cmd": "bun --cwd {{cwd}} test --timeout {{timeout}} --coverage",
+      "module": "bun",
+      "params": {
+        "cwd": {
+          "value": "src",
+          "pass_to": ["build"]
+        },
+        "timeout": "3000"
+      },
+      "env": {
+        "PGHOST": "localhost",
+        "PGPASSWORD": "password"
+      }
+    }
+  }
+}

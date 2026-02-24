@@ -1,0 +1,9 @@
+{
+  "root": true,
+  "tasks": {
+    "test": {
+      "aliases": ["t"],
+      "cmd": "bun test"
+    }
+  }
+}

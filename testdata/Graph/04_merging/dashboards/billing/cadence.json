@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "test": {
+      "env": {
+        "PGHOST": "localhost"
+      },
+      "modules": {
+        "bun": "bun --cwd {{cwd}} test --timeout {{timeout}} --coverage"
+      }
+    }
+  }
+}

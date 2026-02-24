@@ -1,0 +1,12 @@
+{
+  "root": true,
+  "tasks": {
+    "test": {
+      "aliases": ["t"],
+      "cmd": "bun test --timeout {{timeout}} {{opts}}",
+      "params": {
+        "timeout": "3000"
+      }
+    }
+  }
+}
