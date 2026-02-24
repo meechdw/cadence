@@ -31,7 +31,15 @@
             pname = "cadence";
 
             src = ./.;
-            nativeBuildInputs = [ zig ];
+            nativeBuildInputs = [
+              zig
+            ]
+            ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+              pkgs.autoPatchelfHook
+            ];
+            buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+              pkgs.glibc
+            ];
 
             postPatch = ''
               # This should be unnecessary when https://github.com/ziglang/zig/issues/20976 is closed.
