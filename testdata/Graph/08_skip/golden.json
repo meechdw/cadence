@@ -1,7 +1,5 @@
 {
-  "input": {
-    "task_names": ["build", "test"]
-  },
+  "task_names": ["build", "test"],
   "expected_nodes": {
     "build": {
       "sub_path": ".",

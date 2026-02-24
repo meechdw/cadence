@@ -1,8 +1,6 @@
 {
-  "input": {
-    "task_names": ["t"],
-    "params": ["opts=--coverage"]
-  },
+  "task_names": ["t"],
+  "params": ["opts=--coverage"],
   "expected_nodes": {
     "test": {
       "sub_path": ".",

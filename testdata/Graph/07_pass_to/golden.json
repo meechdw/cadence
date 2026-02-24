@@ -1,9 +1,7 @@
 {
-  "input": {
-    "sub_path": "server",
-    "task_names": ["build"],
-    "params": ["cwd=app"]
-  },
+  "cwd": "server",
+  "task_names": ["build"],
+  "params": ["cwd=app"],
   "expected_nodes": {
     "build": {
       "sub_path": ".",

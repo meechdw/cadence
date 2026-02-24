@@ -1,8 +1,6 @@
 {
-  "input": {
-    "sub_path": "app",
-    "task_names": ["t"]
-  },
+  "cwd": "app",
+  "task_names": ["t"],
   "expected_nodes": {
     "test": {
       "sub_path": ".",

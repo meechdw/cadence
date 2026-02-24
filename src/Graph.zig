@@ -50,7 +50,13 @@ pub fn populate(
 
         var arena = ArenaAllocator.init(self.gpa);
         defer arena.deinit();
-        const parsed_params = try self.parseAllParams(arena.allocator(), task_names, params, aliases);
+
+        var parsed_params = HashMap(HashMap([]const u8)){};
+        for (params, 0..) |param, i| {
+            const real_task_name = realTaskName(aliases, task_names[i]);
+            const task_params = try parseParams(arena.allocator(), self.diag, param);
+            try parsed_params.putNoClobber(arena.allocator(), real_task_name, task_params);
+        }
 
         for (task_names) |name| {
             const real_task_name = realTaskName(aliases, name);
@@ -63,24 +69,9 @@ pub fn populate(
     }
 }
 
-fn parseAllParams(
-    self: *Graph,
-    arena: Allocator,
-    task_names: []const []const u8,
-    params: []const []const u8,
-    aliases: HashMap([]const []const u8),
-) !HashMap(HashMap([]const u8)) {
-    var parsed_params = HashMap(HashMap([]const u8)){};
-
-    for (params, 0..) |param, i| {
-        const real_task_name = realTaskName(aliases, task_names[i]);
-        const task_params = try parseParams(arena, self.diag, param);
-        try parsed_params.putNoClobber(arena, real_task_name, task_params);
-    }
-
-    return parsed_params;
-}
-
+/// There is an open issue (https://github.com/ziglang/zig/issues/2971) to support
+/// inferred error sets in recursion. Until that issue is closed, we must explicitly
+/// provide the complete error set.
 const PopulateNodeError = error{
     OutOfMemory,
     SystemResources,
@@ -233,7 +224,7 @@ fn addNode(
                 self.gpa.free(id);
                 return err;
             };
-            try self.mergePassToParams(prev, node);
+            try self.mergeObjectParams(prev, node);
         }
         props.deinit(self.gpa);
         self.gpa.free(id);
@@ -264,7 +255,7 @@ fn addNode(
 
     if (prev_node) |prev| {
         try self.updateDependencies(prev, node);
-        try self.mergePassToParams(prev, node);
+        try self.mergeObjectParams(prev, node);
     }
 
     if (props.depends_on) |depends_on| {
@@ -294,7 +285,7 @@ fn detectCircularDependencies(self: *Graph, node: *Node, depends_on: []*Node) !v
     }
 }
 
-fn mergePassToParams(self: *Graph, prev_node: *Node, curr_node: *Node) !void {
+fn mergeObjectParams(self: *Graph, prev_node: *Node, curr_node: *Node) !void {
     var params = prev_node.params.iterator();
     const is_workspace_dependency = !mem.eql(u8, prev_node.sub_path, curr_node.sub_path);
 
@@ -306,15 +297,7 @@ fn mergePassToParams(self: *Graph, prev_node: *Node, curr_node: *Node) !void {
         }
 
         for (param.object.pass_to) |pass_to| {
-            if (is_workspace_dependency) {
-                const should_pass_on = pass_to.len > 1 and
-                    pass_to[0] == workspace_dependency_prefix[0] and
-                    mem.eql(u8, pass_to[1..], curr_node.task_name);
-
-                if (!should_pass_on) {
-                    continue;
-                }
-            } else if (!mem.eql(u8, pass_to, curr_node.task_name)) {
+            if (!shouldPassParam(pass_to, curr_node, is_workspace_dependency)) {
                 continue;
             }
 
@@ -335,6 +318,15 @@ fn mergePassToParams(self: *Graph, prev_node: *Node, curr_node: *Node) !void {
             try curr_node.*.params.put(self.gpa, name, param);
         }
     }
+}
+
+fn shouldPassParam(pass_to: []const u8, curr_node: *const Node, is_workspace_dependency: bool) bool {
+    if (is_workspace_dependency) {
+        return pass_to.len > 1 and
+            pass_to[0] == workspace_dependency_prefix[0] and
+            mem.eql(u8, pass_to[1..], curr_node.task_name);
+    }
+    return mem.eql(u8, pass_to, curr_node.task_name);
 }
 
 fn populateDependencyNodes(
@@ -412,7 +404,7 @@ pub const Node = struct {
         props: MergedProperties,
     };
 
-    pub fn init(req: RequiredProps) !Node {
+    fn init(req: RequiredProps) !Node {
         return Node{
             .id = req.id,
             .sub_path = req.sub_path,
@@ -426,7 +418,7 @@ pub const Node = struct {
         };
     }
 
-    pub fn deinit(self: *Node, gpa: Allocator) void {
+    fn deinit(self: *Node, gpa: Allocator) void {
         gpa.free(self.id);
         gpa.free(self.sub_path);
         self.params.deinit(gpa);
@@ -436,7 +428,7 @@ pub const Node = struct {
         self.dependencies.dependents.deinit(gpa);
     }
 
-    pub fn createId(
+    fn createId(
         gpa: Allocator,
         sub_path: []const u8,
         task_name: []const u8,
@@ -555,6 +547,7 @@ const Module = struct {
                 .extglob = true,
             }) orelse continue;
             defer results.deinit();
+
             if (results.len() > 0) {
                 return true;
             }
@@ -565,12 +558,10 @@ const Module = struct {
 };
 
 const Golden = struct {
-    input: struct {
-        task_names: []const []const u8,
-        workspace: []const []const u8 = &.{"."},
-        sub_path: []const u8 = ".",
-        params: []const []const u8 = &.{},
-    },
+    cwd: []const u8 = ".",
+    workspace: []const []const u8 = &.{"."},
+    task_names: []const []const u8,
+    params: []const []const u8 = &.{},
     expected_nodes: ExpectedNodes = .{},
     expected_error: ?[]const u8 = null,
 
@@ -601,6 +592,7 @@ fn expectEqualGraph(actual_nodes: HashMap(*Node), expected_nodes: Golden.Expecte
         try testing.expectEqualStrings(expected_node.sub_path, actual_node.sub_path);
         try testing.expectEqualStrings(expected_node.task_name, actual_node.task_name);
         try testing.expectEqualDeep(expected_node.cmd, actual_node.cmd);
+        try testing.expectEqualDeep(expected_node.module, actual_node.module);
 
         try expectEqualHashMaps(Parameter, expected_node.params.map, actual_node.params);
         try expectEqualHashMaps([]const u8, expected_node.cli_params.map, actual_node.cli_params);
@@ -644,17 +636,17 @@ fn expectEqualDependencies(expected_ids: []const []const u8, actual_nodes: []con
 test "populate(): should populate the graph with the expected nodes and dependencies" {
     const gpa = testing.allocator;
 
-    var test_dir = try fs.cwd().openDir("testdata/Graph", .{ .iterate = true });
-    var iter = test_dir.iterate();
-    defer test_dir.close();
+    var dir = try fs.cwd().openDir("testdata/Graph", .{ .iterate = true });
+    var iter = dir.iterate();
+    defer dir.close();
 
     while (try iter.next()) |entry| {
         assert(entry.kind == .directory);
 
-        var dir = try test_dir.openDir(entry.name, .{});
-        defer dir.close();
+        var test_dir = try dir.openDir(entry.name, .{});
+        defer test_dir.close();
 
-        const file = try dir.openFile("golden.json", .{});
+        const file = try test_dir.openFile("golden.json", .{});
         defer file.close();
 
         var reader = file.reader(&.{});
@@ -664,7 +656,7 @@ test "populate(): should populate the graph with the expected nodes and dependen
         const golden = try json.parseFromSlice(Golden, gpa, contents, .{ .allocate = .alloc_always });
         defer golden.deinit();
 
-        var sub_dir = try dir.openDir(golden.value.input.sub_path, .{});
+        var sub_dir = try test_dir.openDir(golden.value.cwd, .{});
         defer sub_dir.close();
         try sub_dir.setAsCwd();
 
@@ -684,9 +676,9 @@ test "populate(): should populate the graph with the expected nodes and dependen
         defer graph.deinit();
 
         const res = graph.populate(
-            golden.value.input.workspace,
-            golden.value.input.task_names,
-            golden.value.input.params,
+            golden.value.workspace,
+            golden.value.task_names,
+            golden.value.params,
         );
 
         if (golden.value.expected_error) |err| {
@@ -718,7 +710,6 @@ const HashMap = std.StringArrayHashMapUnmanaged;
 const assert = std.debug.assert;
 const fmt = std.fmt;
 const fs = std.fs;
-const Dir = fs.Dir;
 const json = std.json;
 const mem = std.mem;
 const Allocator = mem.Allocator;

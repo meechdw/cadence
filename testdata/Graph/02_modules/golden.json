@@ -1,8 +1,6 @@
 {
-  "input": {
-    "workspace": ["billing/client", "billing/server", "metrics/client", "metrics/server"],
-    "task_names": ["test"]
-  },
+  "workspace": ["billing/client", "billing/server", "metrics/client", "metrics/server"],
+  "task_names": ["test"],
   "expected_nodes": {
     "billing/client:test:client": {
       "sub_path": "billing/client",

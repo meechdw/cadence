@@ -1,8 +1,6 @@
 {
-  "input": {
-    "sub_path": "dashboards/billing",
-    "task_names": ["test"]
-  },
+  "cwd": "dashboards/billing",
+  "task_names": ["test"],
   "expected_nodes": {
     "test:bun": {
       "sub_path": ".",
