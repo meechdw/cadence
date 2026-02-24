@@ -20,7 +20,11 @@ theme:
       accent: blue
   features:
     - content.code.copy
+    - navigation.instant
+    - navigation.tracking
     - navigation.sections
+    - navigation.indexes
+    - navigation.top
     - navigation.footer
 
 extra_css:
