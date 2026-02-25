@@ -1,10 +1,8 @@
 pub fn formatTree(gpa: Allocator, arena: Allocator, nodes: HashMap(*Graph.Node)) !json.Value {
-    const alloc = arena;
-
-    var tree = json.ObjectMap.init(alloc);
+    var tree = json.ObjectMap.init(arena);
     for (nodes.values()) |node| {
-        var sub_tree = json.ObjectMap.init(alloc);
-        try buildSubTree(alloc, &sub_tree, node.dependencies.depends_on.items);
+        var sub_tree = json.ObjectMap.init(arena);
+        try buildSubTree(arena, &sub_tree, node.dependencies.depends_on.items);
         try tree.put(node.id, .{ .object = sub_tree });
     }
 
@@ -56,7 +54,7 @@ fn pruneDependencyTree(
     }
 
     for (to_remove.items) |key| {
-        _ = tree.orderedRemove(key);
+        assert(tree.orderedRemove(key));
     }
 
     var prune_iter = tree.iterator();
@@ -74,11 +72,8 @@ const Golden = struct {
 test "formatTree(): should return the dependency tree" {
     const gpa = testing.allocator;
 
-    const original_cwd = try process.getCwdAlloc(gpa);
-    defer {
-        process.changeCurDir(original_cwd) catch @panic("failed to revert current working directory");
-        gpa.free(original_cwd);
-    }
+    const cwd = try process.getCwdAlloc(gpa);
+    defer gpa.free(cwd);
 
     const file = try fs.cwd().openFile("testdata/tree/golden.json", .{});
     defer file.close();
@@ -95,21 +90,22 @@ test "formatTree(): should return the dependency tree" {
 
     var sub_dir = try dir.openDir(golden.value.cwd, .{});
     defer sub_dir.close();
-    try sub_dir.setAsCwd();
+
+    const sub_path = try fs.path.resolvePosix(gpa, &.{
+        cwd, "testdata/tree", golden.value.cwd,
+    });
+    defer gpa.free(sub_path);
 
     var diag = Diagnostic.init(gpa);
     defer diag.deinit();
 
-    var parser = Config.Parser.init(gpa, &diag);
+    var parser = Config.Parser.init(gpa, &diag, sub_dir);
     defer parser.deinit();
 
-    const cwd = try process.getCwdAlloc(gpa);
-    defer gpa.free(cwd);
-
-    var walker = TreeWalker.init(gpa, &parser, cwd);
+    var walker = TreeWalker.init(gpa, &parser, sub_path);
     defer walker.deinit();
 
-    var graph = Graph.init(gpa, &diag, &walker);
+    var graph = Graph.init(gpa, &diag, &walker, sub_dir, sub_path);
     defer graph.deinit();
 
     try graph.populate(&.{"."}, golden.value.task_names, &.{});
@@ -140,6 +136,7 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const HashMap = std.StringArrayHashMapUnmanaged;
+const assert = std.debug.assert;
 const fs = std.fs;
 const json = std.json;
 const Allocator = std.mem.Allocator;

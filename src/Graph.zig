@@ -4,17 +4,21 @@ gpa: Allocator,
 arena: ArenaAllocator,
 diag: *Diagnostic,
 walker: *TreeWalker,
+cwd: Dir,
+cwd_path: []const u8,
 shell: Shell = Shell.default,
 nodes: HashMap(*Node) = .{},
 
 const workspace_dependency_prefix = "#";
 
-pub fn init(gpa: Allocator, diag: *Diagnostic, walker: *TreeWalker) Graph {
+pub fn init(gpa: Allocator, diag: *Diagnostic, walker: *TreeWalker, cwd: Dir, cwd_path: []const u8) Graph {
     return .{
         .gpa = gpa,
         .arena = ArenaAllocator.init(gpa),
         .diag = diag,
         .walker = walker,
+        .cwd = cwd,
+        .cwd_path = cwd_path,
     };
 }
 
@@ -160,7 +164,7 @@ fn createModules(self: *Graph, stack: *TreeWalker.Iterator, sub_path: []const u8
     while (stack.next()) |config| {
         for (config.modules.map.keys()) |module_type| {
             if (!modules.contains(module_type)) {
-                const module = Module.init(sub_path);
+                const module = Module.init(self.cwd_path, sub_path);
                 try modules.putNoClobber(self.gpa, module_type, module);
             }
         }
@@ -351,7 +355,7 @@ fn populateDependencyNodes(
             const openable = if (resolved.len == 0) "." else resolved;
             defer self.gpa.free(resolved);
 
-            var dir = fs.cwd().openDir(openable, .{}) catch |err| {
+            var dir = self.cwd.openDir(openable, .{}) catch |err| {
                 return self.diag.report(err, "failed to resolve dependency directory '{s}'", .{sub_path});
             };
             dir.close();
@@ -369,7 +373,7 @@ fn normalizeSubpaths(self: *Graph, paths: []const []const u8) ![]const u8 {
     const resolved = try fs.path.resolvePosix(self.gpa, paths);
     const sub_path = if (resolved.len == 0) "." else resolved;
 
-    var dir = fs.cwd().openDir(sub_path, .{}) catch |err| {
+    var dir = self.cwd.openDir(sub_path, .{}) catch |err| {
         defer self.gpa.free(resolved);
         return self.diag.report(err, "dependency directory resolved to '{s}'", .{sub_path});
     };
@@ -516,12 +520,16 @@ const MergedProperties = struct {
 };
 
 const Module = struct {
+    cwd: []const u8,
     sub_path: []const u8,
     props: MergedProperties = .{},
     is_active: bool = false,
 
-    fn init(sub_path: []const u8) Module {
-        return .{ .sub_path = sub_path };
+    fn init(cwd: []const u8, sub_path: []const u8) Module {
+        return .{
+            .cwd = cwd,
+            .sub_path = sub_path,
+        };
     }
 
     fn deinit(self: *Module, gpa: Allocator) void {
@@ -536,7 +544,7 @@ const Module = struct {
 
     fn dirHasMatches(self: Module, gpa: Allocator, patterns: []const []const u8) !bool {
         for (patterns) |pattern| {
-            const joined = try fs.path.resolvePosix(gpa, &.{ self.sub_path, pattern });
+            const joined = try fs.path.resolvePosix(gpa, &.{ self.cwd, self.sub_path, pattern });
             defer gpa.free(joined);
 
             var results = try zlob.match(gpa, joined, ZlobFlags{
@@ -636,11 +644,8 @@ fn expectEqualDependencies(expected_ids: []const []const u8, actual_nodes: []con
 test "populate(): should populate the graph with the expected nodes and dependencies" {
     const gpa = testing.allocator;
 
-    const original_cwd = try process.getCwdAlloc(gpa);
-    defer {
-        process.changeCurDir(original_cwd) catch @panic("failed to revert current working directory");
-        gpa.free(original_cwd);
-    }
+    const cwd = try process.getCwdAlloc(gpa);
+    defer gpa.free(cwd);
 
     var dir = try fs.cwd().openDir("testdata/Graph", .{ .iterate = true });
     var iter = dir.iterate();
@@ -664,21 +669,22 @@ test "populate(): should populate the graph with the expected nodes and dependen
 
         var sub_dir = try test_dir.openDir(golden.value.cwd, .{});
         defer sub_dir.close();
-        try sub_dir.setAsCwd();
+
+        const sub_path = try fs.path.resolvePosix(gpa, &.{
+            cwd, "testdata/Graph", entry.name, golden.value.cwd,
+        });
+        defer gpa.free(sub_path);
 
         var diag = Diagnostic.init(gpa);
         defer diag.deinit();
 
-        var parser = Config.Parser.init(gpa, &diag);
+        var parser = Config.Parser.init(gpa, &diag, sub_dir);
         defer parser.deinit();
 
-        const cwd = try process.getCwdAlloc(gpa);
-        defer gpa.free(cwd);
-
-        var walker = TreeWalker.init(gpa, &parser, cwd);
+        var walker = TreeWalker.init(gpa, &parser, sub_path);
         defer walker.deinit();
 
-        var graph = Graph.init(gpa, &diag, &walker);
+        var graph = Graph.init(gpa, &diag, &walker, sub_dir, sub_path);
         defer graph.deinit();
 
         const res = graph.populate(
@@ -716,6 +722,7 @@ const HashMap = std.StringArrayHashMapUnmanaged;
 const assert = std.debug.assert;
 const fmt = std.fmt;
 const fs = std.fs;
+const Dir = fs.Dir;
 const json = std.json;
 const mem = std.mem;
 const Allocator = mem.Allocator;

@@ -86,38 +86,49 @@ pub const Parser = struct {
     gpa: Allocator,
     arena: ArenaAllocator,
     diag: *Diagnostic,
+    cwd: Dir,
     file_buf: [max_file_bytes]u8 = undefined,
     cache: HashMap(*const json.Parsed(Config)) = .{},
 
     const max_file_bytes = 4096;
 
-    pub fn init(gpa: Allocator, diag: *Diagnostic) Parser {
+    pub fn init(gpa: Allocator, diag: *Diagnostic, cwd: Dir) Parser {
         return .{
             .gpa = gpa,
             .arena = ArenaAllocator.init(gpa),
             .diag = diag,
+            .cwd = cwd,
         };
     }
 
     pub fn deinit(self: Parser) void {
+        for (self.cache.keys()) |key| {
+            self.gpa.free(key);
+        }
         self.arena.deinit();
     }
 
     pub fn getValue(self: *Parser, sub_path: []const u8) ?*const Config {
-        if (self.cache.get(sub_path)) |config| {
+        const key = self.normalizeKey(sub_path) catch return null;
+        defer self.gpa.free(key);
+
+        if (self.cache.get(key)) |config| {
             return &config.value;
         }
         return null;
     }
 
     pub fn getOrParse(self: *Parser, sub_path: []const u8) !*const Config {
-        if (self.cache.get(sub_path)) |config| {
+        const key = try self.normalizeKey(sub_path);
+        if (self.cache.get(key)) |config| {
+            self.gpa.free(key);
             return &config.value;
         }
 
         var contents_arena = ArenaAllocator.init(self.gpa);
         defer contents_arena.deinit();
         const contents = self.readFileSmart(contents_arena.allocator(), sub_path) catch |err| {
+            self.gpa.free(key);
             return self.diag.report(err, "failed to read '{f}'", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }),
             });
@@ -133,19 +144,26 @@ pub const Parser = struct {
         config.* = json.parseFromTokenSource(Config, arena, &scanner, .{
             .allocate = .alloc_always,
         }) catch |err| {
+            self.gpa.free(key);
             return self.diag.report(err, "failed to parse '{f}', line {d} column {d}", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }), jd.getLine(), jd.getColumn(),
             });
         };
 
-        const key = try arena.dupe(u8, sub_path);
         try self.cache.putNoClobber(arena, key, config);
 
         return &config.value;
     }
 
+    fn normalizeKey(self: *Parser, sub_path: []const u8) ![]const u8 {
+        if (comptime builtin.os.tag == .windows) {
+            return mem.replaceOwned(u8, self.gpa, sub_path, fs.path.sep_str_windows, fs.path.sep_str_posix);
+        }
+        return self.gpa.dupe(u8, sub_path);
+    }
+
     fn readFileSmart(self: *Parser, arena: Allocator, sub_path: []const u8) ![]const u8 {
-        var dir = try fs.cwd().openDir(sub_path, .{});
+        var dir = try self.cwd.openDir(sub_path, .{});
         defer dir.close();
 
         const file = try dir.openFile(filename, .{});
@@ -169,7 +187,7 @@ test "Parser.getOrParse(): should parse the same file faster the second time" {
     var diag = Diagnostic.init(gpa);
     defer diag.deinit();
 
-    var parser = Parser.init(testing.allocator, &diag);
+    var parser = Parser.init(testing.allocator, &diag, fs.cwd());
     defer parser.deinit();
 
     const start = time.nanoTimestamp();
@@ -184,13 +202,16 @@ test "Parser.getOrParse(): should parse the same file faster the second time" {
 }
 
 const Diagnostic = @import("Diagnostic.zig");
+const builtin = @import("builtin");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const HashMap = std.StringArrayHashMapUnmanaged;
 const assert = std.debug.assert;
 const fs = std.fs;
+const Dir = fs.Dir;
 const json = std.json;
+const mem = std.mem;
 const process = std.process;
 const testing = std.testing;
 const time = std.time;

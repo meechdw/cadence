@@ -4,7 +4,6 @@ gpa: Allocator,
 arena: ArenaAllocator,
 parser: *Config.Parser,
 cwd: []const u8,
-cache: HashMap([]*const Config) = .{},
 
 pub fn init(gpa: Allocator, parser: *Config.Parser, cwd: []const u8) TreeWalker {
     return .{
@@ -23,10 +22,6 @@ pub fn deinit(self: TreeWalker) void {
 /// return value is an iterator that can be used to process the files in reverse
 /// order of discovery to properly merge task definitions.
 pub fn walk(self: *TreeWalker, sub_path: []const u8) !Iterator {
-    if (self.cache.get(sub_path)) |configs| {
-        return Iterator.init(configs);
-    }
-
     const arena = self.arena.allocator();
     var configs = ArrayList(*const Config){};
 
@@ -57,11 +52,7 @@ pub fn walk(self: *TreeWalker, sub_path: []const u8) !Iterator {
         dir = try fs.openDirAbsolute(mut_absolute_path, .{});
     }
 
-    const key = try arena.dupe(u8, sub_path);
-    const owned_configs = try configs.toOwnedSlice(arena);
-    try self.cache.putNoClobber(arena, key, owned_configs);
-
-    return Iterator.init(owned_configs);
+    return Iterator.init(try configs.toOwnedSlice(arena));
 }
 
 fn dirContainsConfig(dir: Dir) !bool {
@@ -104,7 +95,7 @@ test "walk(): should parse config files until the root config file is reached" {
     var diag = Diagnostic.init(gpa);
     defer diag.deinit();
 
-    var parser = Config.Parser.init(gpa, &diag);
+    var parser = Config.Parser.init(gpa, &diag, fs.cwd());
     defer parser.deinit();
 
     const cwd = try process.getCwdAlloc(gpa);
