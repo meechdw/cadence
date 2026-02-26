@@ -102,10 +102,8 @@ pub const Parser = struct {
     }
 
     pub fn deinit(self: Parser) void {
-        if (comptime builtin.os.tag == .windows) {
-            for (self.cache.keys()) |key| {
-                self.gpa.free(key);
-            }
+        for (self.cache.keys()) |key| {
+            self.gpa.free(key);
         }
         self.arena.deinit();
     }
@@ -123,19 +121,17 @@ pub const Parser = struct {
 
     pub fn getOrParse(self: *Parser, sub_path: []const u8) !*const Config {
         const key = try fsx.normalize(self.gpa, sub_path);
+        defer if (comptime builtin.os.tag == .windows) {
+            self.gpa.free(key);
+        };
+
         if (self.cache.get(key)) |config| {
-            if (comptime builtin.os.tag == .windows) {
-                self.gpa.free(key);
-            }
             return &config.value;
         }
 
         var contents_arena = ArenaAllocator.init(self.gpa);
         defer contents_arena.deinit();
         const contents = self.readFileSmart(contents_arena.allocator(), sub_path) catch |err| {
-            if (comptime builtin.os.tag == .windows) {
-                self.gpa.free(key);
-            }
             return self.diag.report(err, "failed to read '{f}'", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }),
             });
@@ -151,15 +147,13 @@ pub const Parser = struct {
         config.* = json.parseFromTokenSource(Config, arena, &scanner, .{
             .allocate = .alloc_always,
         }) catch |err| {
-            if (comptime builtin.os.tag == .windows) {
-                self.gpa.free(key);
-            }
             return self.diag.report(err, "failed to parse '{f}', line {d} column {d}", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }), jd.getLine(), jd.getColumn(),
             });
         };
 
-        try self.cache.putNoClobber(arena, key, config);
+        const cache_key = try self.gpa.dupe(u8, key);
+        try self.cache.putNoClobber(arena, cache_key, config);
         return &config.value;
     }
 
