@@ -216,7 +216,12 @@ fn addNode(
         return;
     }
 
-    const id = try Node.createId(self.gpa, sub_path, task_name, module);
+    const posix_sub_path = try fsx.normalize(self.gpa, sub_path);
+    defer if (comptime builtin.os.tag == .windows) {
+        self.gpa.free(posix_sub_path);
+    };
+
+    const id = try Node.createId(self.gpa, posix_sub_path, task_name, module);
     if (self.nodes.get(id)) |node| {
         // It is both possible and acceptable for a node to already exist, however it will
         // always be the case that it's dependents have not been updated. Consider the
@@ -245,7 +250,7 @@ fn addNode(
         }
     }
 
-    const sub_path_copy = try self.gpa.dupe(u8, sub_path);
+    const sub_path_copy = try self.gpa.dupe(u8, posix_sub_path);
     const node = try self.arena.allocator().create(Node);
     node.* = try Node.init(.{
         .id = id,
@@ -348,10 +353,10 @@ fn populateDependencyNodes(
 
     if (is_workspace_dependency) {
         const real_task_name = task_name[1..];
-        const config = self.walker.parser.getValue(node.sub_path) orelse return;
+        const config = try self.walker.parser.getValue(node.sub_path) orelse return;
 
         for (config.dependencies) |sub_path| {
-            const resolved = try fs.path.resolvePosix(self.gpa, &.{ node.sub_path, sub_path });
+            const resolved = try fs.path.resolve(self.gpa, &.{ node.sub_path, sub_path });
             const openable = if (resolved.len == 0) "." else resolved;
             defer self.gpa.free(resolved);
 
@@ -367,19 +372,6 @@ fn populateDependencyNodes(
     }
 
     try self.populateNode(stack, params, node.sub_path, task_name, node);
-}
-
-fn normalizeSubpaths(self: *Graph, paths: []const []const u8) ![]const u8 {
-    const resolved = try fs.path.resolvePosix(self.gpa, paths);
-    const sub_path = if (resolved.len == 0) "." else resolved;
-
-    var dir = self.cwd.openDir(sub_path, .{}) catch |err| {
-        defer self.gpa.free(resolved);
-        return self.diag.report(err, "dependency directory resolved to '{s}'", .{sub_path});
-    };
-    dir.close();
-
-    return resolved;
 }
 
 pub const Node = struct {
@@ -544,10 +536,14 @@ const Module = struct {
 
     fn dirHasMatches(self: Module, gpa: Allocator, patterns: []const []const u8) !bool {
         for (patterns) |pattern| {
-            const joined = try fs.path.resolvePosix(gpa, &.{ self.cwd, self.sub_path, pattern });
-            defer gpa.free(joined);
+            const resolved = try fs.path.resolve(gpa, &.{ self.cwd, self.sub_path, pattern });
+            defer gpa.free(resolved);
+            const posix_pattern = try fsx.normalize(gpa, resolved);
+            defer if (comptime builtin.os.tag == .windows) {
+                gpa.free(posix_pattern);
+            };
 
-            var results = try zlob.match(gpa, joined, ZlobFlags{
+            var results = try zlob.match(gpa, posix_pattern, ZlobFlags{
                 .nosort = true,
                 .brace = true,
                 .gitignore = true,
@@ -670,7 +666,7 @@ test "populate(): should populate the graph with the expected nodes and dependen
         var sub_dir = try test_dir.openDir(golden.value.cwd, .{});
         defer sub_dir.close();
 
-        const sub_path = try fs.path.resolvePosix(gpa, &.{
+        const sub_path = try fs.path.resolve(gpa, &.{
             cwd, "testdata/Graph", entry.name, golden.value.cwd,
         });
         defer gpa.free(sub_path);
@@ -714,7 +710,9 @@ const Task = Config.Task;
 const Shell = Config.Shell;
 const Diagnostic = @import("Diagnostic.zig");
 const TreeWalker = @import("TreeWalker.zig");
+const fsx = @import("fsx.zig");
 const parseParams = @import("parse_params.zig").parseParams;
+const builtin = @import("builtin");
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;

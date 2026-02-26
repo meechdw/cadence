@@ -102,16 +102,19 @@ pub const Parser = struct {
     }
 
     pub fn deinit(self: Parser) void {
-        for (self.cache.keys()) |key| {
-            self.gpa.free(key);
+        if (comptime builtin.os.tag == .windows) {
+            for (self.cache.keys()) |key| {
+                self.gpa.free(key);
+            }
         }
         self.arena.deinit();
     }
 
-    pub fn getValue(self: *Parser, sub_path: []const u8) ?*const Config {
-        const key = self.normalizeKey(sub_path) catch return null;
-        defer self.gpa.free(key);
-
+    pub fn getValue(self: *Parser, sub_path: []const u8) !?*const Config {
+        const key = try fsx.normalize(self.gpa, sub_path);
+        defer if (comptime builtin.os.tag == .windows) {
+            self.gpa.free(key);
+        };
         if (self.cache.get(key)) |config| {
             return &config.value;
         }
@@ -119,16 +122,20 @@ pub const Parser = struct {
     }
 
     pub fn getOrParse(self: *Parser, sub_path: []const u8) !*const Config {
-        const key = try self.normalizeKey(sub_path);
+        const key = try fsx.normalize(self.gpa, sub_path);
         if (self.cache.get(key)) |config| {
-            self.gpa.free(key);
+            if (comptime builtin.os.tag == .windows) {
+                self.gpa.free(key);
+            }
             return &config.value;
         }
 
         var contents_arena = ArenaAllocator.init(self.gpa);
         defer contents_arena.deinit();
         const contents = self.readFileSmart(contents_arena.allocator(), sub_path) catch |err| {
-            self.gpa.free(key);
+            if (comptime builtin.os.tag == .windows) {
+                self.gpa.free(key);
+            }
             return self.diag.report(err, "failed to read '{f}'", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }),
             });
@@ -144,22 +151,16 @@ pub const Parser = struct {
         config.* = json.parseFromTokenSource(Config, arena, &scanner, .{
             .allocate = .alloc_always,
         }) catch |err| {
-            self.gpa.free(key);
+            if (comptime builtin.os.tag == .windows) {
+                self.gpa.free(key);
+            }
             return self.diag.report(err, "failed to parse '{f}', line {d} column {d}", .{
                 fs.path.fmtJoin(&.{ sub_path, filename }), jd.getLine(), jd.getColumn(),
             });
         };
 
         try self.cache.putNoClobber(arena, key, config);
-
         return &config.value;
-    }
-
-    fn normalizeKey(self: *Parser, sub_path: []const u8) ![]const u8 {
-        if (comptime builtin.os.tag == .windows) {
-            return mem.replaceOwned(u8, self.gpa, sub_path, fs.path.sep_str_windows, fs.path.sep_str_posix);
-        }
-        return self.gpa.dupe(u8, sub_path);
     }
 
     fn readFileSmart(self: *Parser, arena: Allocator, sub_path: []const u8) ![]const u8 {
@@ -202,6 +203,7 @@ test "Parser.getOrParse(): should parse the same file faster the second time" {
 }
 
 const Diagnostic = @import("Diagnostic.zig");
+const fsx = @import("fsx.zig");
 const builtin = @import("builtin");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -211,7 +213,6 @@ const assert = std.debug.assert;
 const fs = std.fs;
 const Dir = fs.Dir;
 const json = std.json;
-const mem = std.mem;
 const process = std.process;
 const testing = std.testing;
 const time = std.time;

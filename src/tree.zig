@@ -91,7 +91,7 @@ test "formatTree(): should return the dependency tree" {
     var sub_dir = try dir.openDir(golden.value.cwd, .{});
     defer sub_dir.close();
 
-    const sub_path = try fs.path.resolvePosix(gpa, &.{
+    const sub_path = try fs.path.resolve(gpa, &.{
         cwd, "testdata/tree", golden.value.cwd,
     });
     defer gpa.free(sub_path);
