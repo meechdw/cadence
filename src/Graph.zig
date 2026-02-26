@@ -692,7 +692,7 @@ test "populate(): should populate the graph with the expected nodes and dependen
         if (golden.value.expected_error) |err| {
             try testing.expectError(error.Reported, res);
             try testing.expect(mem.indexOf(u8, diag.payload.?, err) != null);
-            return;
+            continue;
         }
 
         try res;
