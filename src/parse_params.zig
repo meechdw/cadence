@@ -21,17 +21,23 @@ pub fn parseParams(gpa: Allocator, diag: *Diagnostic, str: []const u8) !HashMap(
                     key_name = str[key_start..i];
                     value_start = i + 1;
                     state = .default;
+                    continue;
+                }
+                if (b == ' ') {
+                    key_start = i + 1;
                 }
             },
             .in_double_quote => {
                 if (b == '"') {
                     try params.put(gpa, key_name, str[value_start..i]);
+                    key_start = i + 1;
                     state = .in_key;
                 }
             },
             .in_single_quote => {
                 if (b == '\'') {
                     try params.put(gpa, key_name, str[value_start..i]);
+                    key_start = i + 1;
                     state = .in_key;
                 }
             },
@@ -101,6 +107,19 @@ test "parseParams(): should parse multiple quoted parameters with spaces" {
     try testing.expectEqual(2, params.count());
     try testing.expectEqualStrings("5000", params.get("timeout").?);
     try testing.expectEqualStrings("--coverage --randomize", params.get("opts").?);
+}
+
+test "parseParams(): should parse quoted parameter followed by unquoted parameter" {
+    const gpa = testing.allocator;
+    var diag = Diagnostic.init(gpa);
+    defer diag.deinit();
+
+    var params = try parseParams(gpa, &diag, "bun_opts='--cwd src' test_opts=--coverage");
+    defer params.deinit(gpa);
+
+    try testing.expectEqual(2, params.count());
+    try testing.expectEqualStrings("--cwd src", params.get("bun_opts").?);
+    try testing.expectEqualStrings("--coverage", params.get("test_opts").?);
 }
 
 test "parseParams(): should error given unterminated quotes" {
