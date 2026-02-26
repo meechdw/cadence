@@ -33,7 +33,7 @@ pub fn walk(self: *TreeWalker, sub_path: []const u8) !Iterator {
     defer dir.close();
 
     while (true) {
-        if (try dirContainsConfig(dir)) {
+        if (try fsx.exists(dir, Config.filename)) {
             const relative_path = try fs.path.relative(self.gpa, self.cwd, mut_absolute_path);
             defer self.gpa.free(relative_path);
             const parser_path = if (relative_path.len == 0) "." else relative_path;
@@ -53,16 +53,6 @@ pub fn walk(self: *TreeWalker, sub_path: []const u8) !Iterator {
     }
 
     return Iterator.init(try configs.toOwnedSlice(arena));
-}
-
-fn dirContainsConfig(dir: Dir) !bool {
-    dir.access(Config.filename, .{}) catch |err| {
-        if (err == Dir.AccessError.FileNotFound) {
-            return false;
-        }
-        return err;
-    };
-    return true;
 }
 
 pub const Iterator = struct {
@@ -110,12 +100,12 @@ test "walk(): should parse config files until the root config file is reached" {
 
 const Config = @import("Config.zig");
 const Diagnostic = @import("Diagnostic.zig");
+const fsx = @import("fsx.zig");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const ArrayList = std.ArrayList;
 const HashMap = std.StringHashMapUnmanaged;
 const fs = std.fs;
-const Dir = fs.Dir;
 const process = std.process;
 const testing = std.testing;

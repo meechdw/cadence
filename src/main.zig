@@ -100,7 +100,7 @@ fn mainCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger) !void {
         .clean => cleanCommand(gpa, diag, logger, &iter),
         .help => printHelpMenu(gpa, logger, main_params, opts),
         .run => try runCommand(gpa, diag, logger, &iter),
-        .tree => printHelpMenu(gpa, logger, main_params, opts),
+        .tree => try treeCommand(gpa, diag, logger, &iter),
         .version => logger.stdout.print("{s}\n", .{build.version}),
     };
 }
@@ -167,11 +167,15 @@ fn runCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger, iter: *ArgItera
 }
 
 fn treeCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger, iter: *ArgIterator) !void {
-    const params = "-h, --help  Print help menu and exit\n";
+    const params =
+        \\-h, --help  Print help menu and exit
+        \\<task>...
+    ;
     const parsed_params = comptime clap.parseParamsComptime(params);
 
+    const parsers = .{ .task = clap.parsers.string };
     var clap_diag = clap.Diagnostic{};
-    var res = clap.parseEx(clap.Help, &parsed_params, clap.parsers.default, iter, .{
+    var res = clap.parseEx(clap.Help, &parsed_params, parsers, iter, .{
         .diagnostic = &clap_diag,
         .allocator = gpa,
     }) catch |err| return reportClapErr(diag, clap_diag, err);
@@ -181,8 +185,15 @@ fn treeCommand(gpa: Allocator, diag: *Diagnostic, logger: Logger, iter: *ArgIter
         return printHelpMenu(gpa, logger, params, .{
             .name = "tree",
             .description = "Print the dependency tree",
+            .arguments = "<task>...",
         });
     }
+
+    const cwd = fs.cwd();
+    const cwd_path = try process.getCwdAlloc(gpa);
+    defer gpa.free(cwd_path);
+
+    try app.run(gpa, diag, logger, cwd, cwd_path, .tree, res.positionals[0], &.{});
 }
 
 fn reportClapErr(diag: *Diagnostic, clap_diag: clap.Diagnostic, err: anyerror) anyerror {
@@ -351,6 +362,7 @@ fn repeatString(gpa: Allocator, str: []const u8, count: usize) ![]const u8 {
 const clap = @import("clap");
 const Diagnostic = @import("Diagnostic.zig");
 const Logger = @import("Logger.zig");
+const app = @import("app.zig");
 const build = @import("build");
 const builtin = @import("builtin");
 const std = @import("std");

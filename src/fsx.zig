@@ -8,8 +8,19 @@ pub fn normalize(gpa: Allocator, path: []const u8) Allocator.Error![]const u8 {
     return path;
 }
 
+pub fn exists(dir: Dir, sub_path: []const u8) !bool {
+    dir.access(sub_path, .{}) catch |err| {
+        if (err == Dir.AccessError.FileNotFound) {
+            return false;
+        }
+        return err;
+    };
+    return true;
+}
+
 const builtin = @import("builtin");
 const std = @import("std");
 const fs = std.fs;
+const Dir = fs.Dir;
 const mem = std.mem;
 const Allocator = mem.Allocator;
