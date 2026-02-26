@@ -5,7 +5,7 @@
     "test": {
       "sub_path": ".",
       "task_name": "test",
-      "cmd": "bun test --timeout {{timeout}} {{test_opts}}",
+      "cmd": "bun {{bun_opts}} test --timeout {{timeout}} {{test_opts}}",
       "params": {
         "timeout": "3000"
       },
